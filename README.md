@@ -1,5 +1,5 @@
 # fy_lyrics
-lyrics scraper for foobar2000 using JScript Panel
+lyrics scraper for foobar2000 using JScript Panel.
 푸바용 알송 가사 가져오는 게 막힌 이후로 한국 가사 가져오는 게 어려워져서 만들었음.
 
 ## 기능
