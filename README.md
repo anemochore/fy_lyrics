@@ -2,7 +2,7 @@
 lyrics scraper for foobar2000 using JScript Panel. 푸바 사용자로서, 얼마 전 알송 가사 가져오는 게 막힌 이후로 한국 가사 가져오는 게 어려워져서 만들었음.
 
 ## 기능
-1. 푸바의 [JScript Panel](https://marc2k3.github.io/foo_jscript_panel.html)의 자바스크립트를 이용하여 
+1. 푸바의 [JScript Panel](https://marc2k3.github.io/foo_jscript_panel.html)을 이용해 자바스크립트를 실행하여 
 2. 국내외 주요 사이트에서 가사를 검색하고 
 3. 검색 결과 첫 번째 페이지에서 가사를 스크레이핑해서 
 4. 지정한 폴더에 `txt`로 저장한다.
