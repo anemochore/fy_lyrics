@@ -1,6 +1,5 @@
 # fy_lyrics
-lyrics scraper for foobar2000 using JScript Panel.
-푸바용 알송 가사 가져오는 게 막힌 이후로 한국 가사 가져오는 게 어려워져서 만들었음.
+lyrics scraper for foobar2000 using JScript Panel. 푸바 사용자로서, 얼마 전 알송 가사 가져오는 게 막힌 이후로 한국 가사 가져오는 게 어려워져서 만들었음.
 
 ## 기능
 1. 푸바의 [JScript Panel](https://marc2k3.github.io/foo_jscript_panel.html)의 자바스크립트를 이용하여 
@@ -23,9 +22,10 @@ lyrics scraper for foobar2000 using JScript Panel.
 
 ## 설치
 1. JScript Panel이 없다면 먼저 설치하고, 패널을 UI에 추가한다.
-2. 이곳의 `fy_lyrics.txt.js`, `fy_settings.js`, `unorm.js` 파일을 다운로드해서 푸바 폴더(`foobar2000`) 아래 `user-components\foo_jscript_panel\scripts\`에 둔다.
-3. JScript 패널을 우클릭하고 `Configure... > File > Import...` 선택 후 앞의 `fy_lyrics.txt.js` 파일을 선택하고 `[OK]` 버튼을 누른다.
-4. 노래를 새로 재생하면 작동 시작.
+2. 푸바 폴더(`foobar2000`) 아래 JScript 폴더(`user-components\foo_jscript_panel`)에 가서 
+3. `scripts` 폴더를 만들고 거기에 이곳의 `fy_lyrics.txt.js`, `fy_settings.js`, `unorm.js` 파일을 받아서 둔다.
+4. JScript 패널을 우클릭하고 `Configure... > File > Import...` 선택 후 앞의 `fy_lyrics.txt.js` 파일을 선택하고 `[OK]` 버튼을 누른다.
+5. 노래를 새로 재생하면 작동 시작.
 
 ## `fy_settings.js` 설정
 1. 이 파일에서 파일 저장 위치를 지정해야 한다(현재 기본값은 `Z:\lyrics`).
