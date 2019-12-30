@@ -1,107 +1,79 @@
-﻿var SAVE_FOLDER = 'Z:\\lyrics';
+﻿var UPDATE_URL_SCRIPT   = 'https://anemochore.github.io/fy_lyrics/fy_lyrics.txt.js';
+var UPDATE_URL_SETTINGS = 'https://anemochore.github.io/fy_lyrics/fy_settings.js';
+var SAVE_FOLDER = 'Z:\\lyrics';
 
 //valid protocol is https or http only.
 //for valid pathnameAndSearch, see http://bl.ocks.org/abernier/3070589
 var SITES = [
   { name: 'Genius', 
     protocolAndHost: 'https://genius.com', 
-    /* not working. they blocked
-    pathnameAndSearch: '/search?q=', 
-    firstResultLinkElObj: {class: 'mini_card'}, 
-    */
     noSearch: true, 
     noSearchSplitter: ' ', 
-    noSearchRegExpToRemove: /[!"'’,\.\(\)\\\/\?]/g, 
-    noSearchStrPairsToReplace: [['&', 'and'], [' ', '-']], 
+    noSearchRegExpAndStrPairToReplace: [/[!"'’,\.\(\)\\\/\?]/g, ''], 
+    noSearchAdditionalStrPairsToReplace: [['&', 'and'], [' ', '-']], 
     noSearchNormalizeToNFD: true, 
     noSearchCapitalize: true, 
     noSearchFinalSuffix: '-lyrics', 
-    resultPageElTag: 'div', 
-    resultPageElObj: {class: 'lyrics'}
+    resultPageElQuery: 'div.lyrics', 
   },
   { name: 'LyricWiki', 
     protocolAndHost: 'https://lyrics.fandom.com', 
     pathnameAndSearch: '/wiki/Special:Search?query=', 
-    firstResultLinkElObj: {class: 'result-link'},
-    resultPageElTag: 'div', 
-    resultPageElObj: {class: 'lyricbox'}
+    firstResultLinkElQuery: 'a.result-link', 
+    resultPageElQuery: 'div.lyricbox', 
+    noUseIfHanguel: true, 
   },
   { name: 'AZlyrics', 
     protocolAndHost: 'https://search.azlyrics.com', 
     pathnameAndSearch: '/search.php?q=', 
-    firstResultLinkElObj: {class: null}, 
+    firstResultLinkParentElQuery: 'table', 
+    firstResultLinkElQuery: 'a[target]', 
     failResultUrl: 'https://www.azlyrics.com/add.php', 
-    resultPageElTag: 'div', 
-    resultPageElObj: {class: null}
+    resultPageElQuery: 'div:not([class])', 
+    noUseIfHanguel: true, 
   },
   { name: 'Musixmatch', 
     protocolAndHost: 'https://www.musixmatch.com', 
     pathnameAndSearch: '/search/', 
     searchRegExpAndStrPairToReplace: [/[&#\?]/g, ' '], 
-    firstResultLinkElObj: {class: 'title'},
+    firstResultLinkElQuery: 'a.title',
     resultPageScriptStartsWith: 'var __mxmProps', 
     resultPageScriptFirstStrToFind: '"body":"', 
     resultPageScriptEndStrToFind: '","language":', 
-    /* without newline-character version
-    resultPageParentElTag: 'div', 
-    resultPageParentElObj: {class: 'mxm-lyrics'}, 
-    resultPageParentElNumberToSkipIfMultiple: 1, 
-    resultPageElTag: 'span', 
-    resultPageElObj: null,
-    */
-    /* without newline-character version (another)
-    resultPageParentElTag: 'div', 
-    resultPageParentElObj: {class: 'mxm-lyrics'}, 
-    resultPageElTag: 'p', 
-    resultPageElObj: {class: 'mxm-lyrics__content '}, 
-    resultPageTakeAllEl: true, 
-    */
-    excludeResultsMatch: ['Edit lyrics', 'Add lyrics']
+    excludeResultsMatch: ['Edit lyrics', 'Add lyrics'], 
   },
   { name: 'LyricsMode', 
     protocolAndHost: 'https://www.lyricsmode.com', 
     pathnameAndSearch: '/search.php?search=', 
-    firstResultLinkElObj: {class: 'lm-link lm-link--primary lm-link--highlight'}, 
-    resultPageElTag: 'div', 
-    resultPageElObj: {id: 'lyrics_text'}, 
-    resultRegExpToRemove: /\nExplain Request \r\n×$/ 
+    firstResultLinkElQuery: 'a.lm-link', 
+    resultPageElQuery: 'div#lyrics_text', 
+    resultRegExpAndStrPairToReplace: [/\nExplain Request \r\n×$/, ''], 
+    noUseIfHanguel: true, 
   },
-  /* it's working, but disabled since it's too slow
-  { name: 'SongMeanings', 
-    protocolAndHost: 'https://songmeanings.com', 
-    pathnameAndSearch: '/query/?query=', 
-    firstResultLinkParentElTag: 'td', 
-    firstResultLinkParentElObj: {class: ''}, 
-    firstResultLinkElObj: null, 
-    resultPageElTag: 'div', 
-    resultPageElObj: {class: 'holder lyric-box'}
-  },
-  */
   { name: '지니', 
     protocolAndHost: 'https://www.genie.co.kr', 
     pathnameAndSearch: '/search/searchMain?query=', 
-    firstResultLinkElObj: {class: 'btn-basic btn-info'}, 
-    firstResultLinkElOnclickRegExpToRemove: /fnViewSongInfo\('|'\)|;|return false/g, 
+    firstResultLinkElQuery: 'a.btn-basic', 
+    firstResultLinkElOnclickRegExpAndStrPairToReplace: [/fnViewSongInfo\('|'\)|;|return false/g, ''], 
     resultPagePathnameAndSearch: '/detail/songInfo?xgnm=',
-    resultPageElTag: 'pre', 
-    resultPageElObj: {id: 'pLyrics'}, 
-    useTextContent: true, 
-    replaceTabsTo: '\n', 
-    /* without newline-character version 
-    resultPageParentElTag: 'pre', 
-    resultPageParentElObj: {id: 'pLyrics'}, 
-    resultPageElTag: 'p', 
-    resultPageElObj: null,
-    */
+    resultPageElQuery: 'pre#pLyrics', 
+    //useTextContent: true, 
+    resultRegExpAndStrPairToReplace: [/\t+/g, '\n'], 
     excludeResultsInclude: ['가사 정보가 없습니다.']
   },
   { name: '벅스', 
     protocolAndHost: 'https://music.bugs.co.kr', 
     pathnameAndSearch: '/search/integrated?q=', 
-    firstResultLinkElObj: {class: 'trackInfo'}, 
-    resultPageElTag: 'xmp', 
-    resultPageElObj: null,
+    firstResultLinkElQuery: 'a.trackInfo', 
+    resultPageElQuery: 'xmp', 
     useTextContent: true
+  },
+  { name: '가사집', 
+    protocolAndHost: 'https://gasazip.com', 
+    pathnameAndSearch: '/search.html?q=', 
+    firstResultLinkElQuery: 'a.list-group-item', 
+    resultPageElQuery: 'div#gasa', 
+    resultRegExpAndStrPairToReplace: [/\r\n^\r\n/g, '\n'], 
   },
 
   //not supported but famous sites
@@ -112,16 +84,25 @@ var SITES = [
 
   //not supported but famous sites in Korea
   //lyrics.co.kr: 'https://www.lyrics.co.kr/' //post method
-  //gasazip: 'https://gasazip.com/'           //google search
+
+  /* it's working, but disabled since it's too slow
+  { name: 'SongMeanings', 
+    protocolAndHost: 'https://songmeanings.com', 
+    pathnameAndSearch: '/query/?query=', 
+    firstResultLinkParentElQuery: 'td[class=""]', 
+    firstResultLinkElQuery: 'a', 
+    resultPageElQuery: 'div.holder', 
+    resultRegExpAndStrPairToReplace: [/Edit Lyrics\nEdit Wiki\nAdd Video/, ''], 
+  },
+  */
 
   /*
   //일한 독음 및 번역... '계속 검색'해야 하므로 패스.
   { name: '지음아이', 
     protocolAndHost: 'http://jieumai.com', 
     pathnameAndSearch: '/xe/?_filter=search&mid=lyrics&search_target=title_content&search_keyword=', 
-    firstResultLinkElObj: {class: 'hx'}, 
-    resultPageElTag: 'article', 
-    resultPageElObj: null
-  }
+    firstResultLinkElQuery: {class: 'hx'}, 
+    resultPageElQuery: 'article', 
+  },
   */
 ];

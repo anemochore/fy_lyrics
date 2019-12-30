@@ -6,15 +6,20 @@
 // @import "%fb2k_component_path%samples\complete\js\panel.js"
 
 // @import "%fb2k_component_path%fy_lyrics\fy_settings.js"
+// @import "%fb2k_component_path%fy_lyrics\user_settings.js"
 // @import "%fb2k_component_path%fy_lyrics\lib\unorm.js"
+
 // ==/PREPROCESSOR==
 
 //ver 0.1, 19-12-22, finished prototype
+//ver 0.2, 19-12-27, new-line issue fix
+//ver 0.3, 19-12-30, seperates settings, noUseIfHanguel setting added, some setting changed, Gasazip added, setting and code refactoring
 
 
 //setting
 var selectedSites = [];
 selectedSites = SITES.slice();
+if(USER_SITES) selectedSites = selectedSites.concat(USER_SITES);
 //selectedSites = [SITES[4]];  //dev
 
 var ERRORS = {
@@ -44,24 +49,24 @@ _.mixin({
     }
 
     this.rbtn_up = function (x, y) {
-      panel.m.AppendMenuItem(_.isFolder(SAVE_FOLDER) ? MF_STRING : MF_GRAYED, 1999, 'Open the save folder');
+      panel.m.AppendMenuItem(_.isFolder(SAVE_FOLDER) ? MF_STRING : MF_GRAYED, 1, 'Open the save folder');
       panel.m.AppendMenuSeparator();
 
-      panel.m.AppendMenuItem(panel.metadb && this.content ? MF_STRING : MF_GRAYED, 9999, 'Copy text to clipboard');
+      panel.m.AppendMenuItem(panel.metadb && this.content ? MF_STRING : MF_GRAYED, 9, 'Copy text to clipboard');
       panel.m.AppendMenuSeparator();
     }
 
     this.rbtn_up_done = function (value) {
       switch(value) {
-        case 1999:
+        case 1:
           WshShell.Run('explorer "' + SAVE_FOLDER.replace(/\\\\/g, '\\') + '"');
           break;
-        case 9999:
+        case 9:
           _.setClipboardData(this.content);
           break;
       }
     }
-
+    
     panel.text_objects.push(this);
     this.x = x;
     this.y = y;
@@ -82,7 +87,49 @@ _.mixin({
     var artistAndTitle = artist + ' - ' + title;
     artistAndTitle = artistAndTitle.replace(/[\\\/:\*\?"<>\|]/g, '_');
     return filename = SAVE_FOLDER + '\\' + artistAndTitle + ' [' + siteName + '].txt';
-  }
+  },
+
+  contains_hangul: function(str) {
+    //https://en.wikipedia.org/wiki/Hangul
+    for(var i=0; i<str.length; i++) {
+      c = str.charCodeAt(i);
+      if( 0x1100<=c && c<=0x11FF ) return true;
+      if( 0x3130<=c && c<=0x318F ) return true;
+      if( 0xAC00<=c && c<=0xD7A3 ) return true;
+      if( 0xA960<=c && c<=0xA97F ) return true;
+      if( 0xD7B0<=c && c<=0xD7FF ) return true;
+    }
+    return false;
+  },
+
+  querySelectorAllOnString: function(value, q) {
+    doc.open();
+    var div = doc.createElement('div');
+    div.innerHTML = value;
+
+    if(q.indexOf(':not(') > -1) { //:not() selector not supported... wtf
+      var idx1 = q.indexOf(':not(');
+      var t1 = q.slice(idx1+5);
+      var idx2 = t1.indexOf(')');
+      var t2 = t1.slice(0, idx2);
+      var q1 = q.replace(':not('+t2+')', '');  //query without the params of :not()
+      var q2 = q1 + t2;                        //query without :not()
+      console.log('q1 '+q1)
+      console.log('q2 '+q2)
+      var data1 = Array.prototype.slice.call(div.querySelectorAll(q1));
+      var data2 = Array.prototype.slice.call(div.querySelectorAll(q2));
+      var data = [];
+      for(var i=0; i<data1.length; i++)
+        if(data2.indexOf(data1[i]) == -1)
+          data.push(data1[i]);
+    }
+    else 
+      var data = div.querySelectorAll(q);
+
+    doc.close();
+    return data;
+  },
+
 });
 
 
@@ -140,7 +187,6 @@ function that_get(artist, title) {
   that.content = 'Fetching... please wait. See the Console for the detail.';
   window.Repaint();
 
-
   //fetch
   that.isFetching = true;
   that.fetchingArtist = artist;
@@ -150,6 +196,9 @@ function that_get(artist, title) {
   fetch(0);
 
   function fetch(idx) {
+    var currentSite = selectedSites[idx];
+    console.log('____fetching idx: ' + (idx+1) + ' of ' + selectedSites.length);
+
     var filename = _.getFilename(that.fetchingArtist, that.fetchingTitle, selectedSites[idx].name);
     if(_.isFile(filename)) {
       console.log(filename + ' already exists, so skip fetching.');
@@ -158,18 +207,20 @@ function that_get(artist, title) {
       return;
     }
 
-    console.log('____fetching idx: ' + (idx+1) + ' of ' + selectedSites.length);
-    var currentSite = selectedSites[idx];
+    var containsHangul = _.contains_hangul(that.fetchingArtist + that.fetchingTitle);
+    if(containsHangul && currentSite.noUseIfHanguel) {
+      console.log("'noUseIfHanguel' of " + currentSite.name + ' triggered, so skip fetching.');
+      results[idx] = ERRORS['FETCHING_ABORTED'];
+      checkIfComplete(idx, that.fetchingArtist, that.fetchingTitle);
+      return;
+    }
+
     var artistAndTitle = artist + ' ' + title;
     if(currentSite.searchRegExpAndStrPairToReplace)
       artistAndTitle = artistAndTitle.replace(currentSite.searchRegExpAndStrPairToReplace[0], currentSite.searchRegExpAndStrPairToReplace[1]);
     var url = currentSite.protocolAndHost + currentSite.pathnameAndSearch + encodeURIComponent(artistAndTitle);
     var pass = 1;
     if(currentSite.noSearch) {
-      String.prototype.ifNull_ = function(str) {
-        return this ? this : str;
-      }
-
       String.prototype.replaceStrPairs_ = function(strPairs) {
         var result = this;
         for(var i=0;i<strPairs.length;i++) 
@@ -180,31 +231,27 @@ function that_get(artist, title) {
       String.prototype.normalizeToNFD_ = function() {
         //from https://stackoverflow.com/a/37511463/6153990
         // and https://github.com/walling/unorm
-        if(is_hangul_str_(this))
-          return this;
-        else
-          return this.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-        //https://zetawiki.com/wiki/자바스크립트에서_문자가_한글인지_확인
-        function is_hangul_str_(str) {
-          for(var i=0; i<str.length; i++) {
-            c = str.charCodeAt(i);
-            if( 0x1100<=c && c<=0x11FF ) return true;
-            if( 0x3130<=c && c<=0x318F ) return true;
-            if( 0xAC00<=c && c<=0xD7A3 ) return true;
-          }
-          return false;
-        }
+        if(_.contains_hangul(this)) return this;
+        else return this.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       }
 
-      var query = artist + currentSite.noSearchSplitter.ifNull_(' ') + title;
-      query = query.replace(currentSite.noSearchRegExpToRemove, '').replaceStrPairs_(currentSite.noSearchStrPairsToReplace);
-      if(currentSite.noSearchNormalizeToNFD) query = query.normalizeToNFD_();
-      if(currentSite.noSearchCapitalize) query = query[0].toUpperCase() + query.toLowerCase().slice(1, query.length);
-      query += currentSite.noSearchFinalSuffix.ifNull_('');
+      var query = artist;
+      if(currentSite.noSearchSplitter)
+        query += currentSite.noSearchSplitter + title;
+      else 
+        query += ' ' + title;
+      if(currentSite.noSearchRegExpAndStrPairToReplace)
+        query = query.replace(currentSite.noSearchRegExpAndStrPairToReplace[0], currentSite.noSearchRegExpAndStrPairToReplace[1]);
+      if(currentSite.noSearchAdditionalStrPairsToReplace)
+        query = query.replaceStrPairs_(currentSite.noSearchAdditionalStrPairsToReplace);
+      if(currentSite.noSearchNormalizeToNFD)
+        query = query.normalizeToNFD_();
+      if(currentSite.noSearchCapitalize)
+        query = query[0].toUpperCase() + query.toLowerCase().slice(1, query.length);
+      if(currentSite.noSearchFinalSuffix)
+        query += currentSite.noSearchFinalSuffix;
 
       url = currentSite.protocolAndHost + '/' + query;  //no encodeURIComponent
-      //console.log('url: '+ url);
       pass = 2;
     }
 
@@ -235,30 +282,30 @@ function that_get(artist, title) {
   function that_success(idx, currentSite, txt, url, pass) {
     if(pass == 1) {  //first pass
       var parentElTxt = txt;
-      if(currentSite.firstResultLinkParentElTag) {
+      if(currentSite.firstResultLinkParentElQuery) {
         var elsToKeep = 1;
         if(currentSite.firstResultLinkParentElNumberToSkipIfMultiple) 
           elsToKeep = currentSite.firstResultLinkParentElNumberToSkipIfMultiple + 1;
 
-        parentElTxt = fyFilter_(_.getElementsByTagName(txt, currentSite.firstResultLinkParentElTag), currentSite.firstResultLinkParentElObj, elsToKeep);
+        parentElTxt = _.querySelectorAllOnString(txt, currentSite.firstResultLinkParentElQuery);//, currentSite.firstResultLinkParentElObj, elsToKeep);
         if(parentElTxt.length > 1)
           parentElTxt = parentElTxt[elsToKeep-1].innerHTML;
         else 
           parentElTxt = parentElTxt[0].innerHTML;
       }
 
-      var firstResultLinkEl = fyFilter_(_.getElementsByTagName(parentElTxt, 'a'), currentSite.firstResultLinkElObj, 1)[0];
+      var firstResultLinkEl = _.querySelectorAllOnString(parentElTxt, currentSite.firstResultLinkElQuery)[0];
       var newUrl;
       if(firstResultLinkEl && firstResultLinkEl.href) {
         //check if url is valid
         newUrl = firstResultLinkEl.href;
-        if(currentSite.firstResultLinkElOnclickRegExpToRemove) {
+        if(currentSite.firstResultLinkElOnclickRegExpAndStrPairToReplace) {
           var js = firstResultLinkEl.getAttribute('onclick');
           if(!js || !js.trim()) {
             console.log("no 'onclick' property on firstResultLinkEl on " + currentSite.name);
             results[idx] = ERRORS['SETTING_ERROR'];
           }
-          js = js.replace(currentSite.firstResultLinkElOnclickRegExpToRemove, '').trim();
+          js = js.replace(currentSite.firstResultLinkElOnclickRegExpAndStrPairToReplace[0], currentSite.firstResultLinkElOnclickRegExpAndStrPairToReplace[1]).trim();
 
           newUrl = currentSite.resultPagePathnameAndSearch;
           if(!newUrl || !newUrl.trim()) {
@@ -268,7 +315,6 @@ function that_get(artist, title) {
           newUrl = currentSite.protocolAndHost + newUrl + js;
         }
         else {
-          //console.log('newUrl 0: '+newUrl);
           var currentProtocol = currentSite.protocolAndHost.slice(0,5);
           if(currentProtocol != 'https') currentProtocol = 'http';
           //handling unusual(?) or relative address case...
@@ -285,14 +331,12 @@ function that_get(artist, title) {
             newUrl = currentSite.protocolAndHost + pathname;
           }
           */
-          //console.log('newUrl 1: '+newUrl);
 
           //if the site's protocol and the result's protocol is different then... 
           if(currentProtocol == 'https' && newUrl.slice(0,5) == 'http:')  //LyricWiki
             newUrl = newUrl.replace('http', 'https');
           else if(currentProtocol == 'http' && newUrl.slice(0,5) == 'https')  //???
             newUrl = newUrl.replace('https', 'http');
-          //console.log('newUrl 2: '+newUrl);
 
           if(newUrl == currentSite.failResultUrl) {
             console.log("result page was 'failResultUrl'");
@@ -337,12 +381,12 @@ function that_get(artist, title) {
       var result = ERRORS['NO_RESULTS'];
 
       var parentElTxt = txt;
-      if(currentSite.resultPageParentElTag) {
+      if(currentSite.resultPageParentElQuery) {
         var elsToKeep = 1;
         if(currentSite.resultPageParentElNumberToSkipIfMultiple)
           elsToKeep = currentSite.resultPageParentElNumberToSkipIfMultiple + 1;
 
-        parentElTxt = fyFilter_(_.getElementsByTagName(txt, currentSite.resultPageParentElTag), currentSite.resultPageParentElObj, elsToKeep);
+        parentElTxt = _.querySelectorAllOnString(txt, currentSite.resultPageParentElQuery);
         if(parentElTxt.length > 1)
           parentElTxt = parentElTxt[elsToKeep-1].innerHTML;
         else 
@@ -350,22 +394,24 @@ function that_get(artist, title) {
       }
 
       var tempResult = '';
-      if(currentSite.resultPageElTag) {
+      if(currentSite.resultPageElQuery) {
         if(currentSite.resultPageScriptStartsWith) {
-          console.log('resultPageElTag and resultPageScriptStartsWith cannot be specified at the same time.');
+          console.log("'resultPageElQuery' and 'resultPageScriptStartsWith' cannot be specified at the same time.");
           result = ERRORS['SETTING_ERROR'];
         }
-        var resultPageEls = fyFilter_(_.getElementsByTagName(parentElTxt, currentSite.resultPageElTag), currentSite.resultPageElObj);
-        var elTxt = '', tempResult = '';
-        for(var i=0; i<resultPageEls.length; i++) {
-          var resultPageEl = resultPageEls[i];
-          if(resultPageEl && resultPageEl.innerText) {
-            elTxt = resultPageEl.innerText.trim();
-            if(currentSite.useTextContent && resultPageEl.textContent)
-              elTxt = resultPageEl.textContent.trim();
+        else {
+          var resultPageEls = _.querySelectorAllOnString(parentElTxt, currentSite.resultPageElQuery);
+          var elTxt = '';
+          for(var i=0; i<resultPageEls.length; i++) {
+            var resultPageEl = resultPageEls[i];
+            if(resultPageEl && resultPageEl.innerText) {
+              elTxt = resultPageEl.innerText.trim();
+              if(currentSite.useTextContent && resultPageEl.textContent)
+                elTxt = resultPageEl.textContent.trim();
+            }
+            if(elTxt) tempResult += elTxt;
+            if(!currentSite.resultPageTakeAllEl) break;  //run only once if resultPageTakeAllEl is false.
           }
-          if(elTxt) tempResult += elTxt;
-          if(!currentSite.resultPageTakeAllEl) break;  //run only once if resultPageTakeAllEl is false.
         }
       }
       else if(currentSite.resultPageScriptStartsWith) {
@@ -403,7 +449,8 @@ function that_get(artist, title) {
           }
         }
 
-        tempResult = tempResult.replace(currentSite.resultRegExpToRemove, '');
+        if(currentSite.resultRegExpAndStrPairToReplace)
+          tempResult = tempResult.replace(currentSite.resultRegExpAndStrPairToReplace[0], currentSite.resultRegExpAndStrPairToReplace[1]);
       }
       
       if(tempResult) result = tempResult;
@@ -418,7 +465,6 @@ function that_get(artist, title) {
           console.log('...with warning: possible wrong lyrics (no matching title text on the page)');
       }
 
-      if(currentSite.replaceTabsTo) result = result.replace(/\t+/g, currentSite.replaceTabsTo);
       results[idx] = result;
       checkIfComplete(idx, that.fetchingArtist, that.fetchingTitle);
     }
@@ -433,28 +479,6 @@ function that_get(artist, title) {
       fetch(idx + 1);
   }
 
-  function fyFilter_(arr, oneKeyObj, elsToKeep) {
-    //console.log('arr.length: ' + arr.length + ' / elsToKeep: '+elsToKeep);
-
-    var key = null, val = null;
-    if(oneKeyObj) {
-      key = Object.keys(oneKeyObj)[0];
-      val = oneKeyObj[key];
-    }
-
-    var result = [], count = 0;
-    for(var i=0; i<arr.length; i++) {
-      //console.log('arr['+i+']: '+arr[i].innerText+' / arr[i].getAttribute(key): '+arr[i].getAttribute(key)+' / if: '+(arr[i].getAttribute(key) == val));
-      if(arr[i].getAttribute(key) == val) {
-        result.push(arr[i]);
-        count += 1;
-        if(elsToKeep && count >= elsToKeep) break;
-      }
-    }
-    //console.log('result.length: ' + result.length);
-    return result;
-  }
-  
 }
 
 
@@ -464,7 +488,7 @@ function write(results, fetchingArtist, fetchingTitle, isAborted) {
   var content = '';
 
   if(isAborted) 
-    content = 'fetching aborted...';
+    content = 'fetching aborted and restarting...';
   else {
     console.log('done!');
     that.isFetching = false;

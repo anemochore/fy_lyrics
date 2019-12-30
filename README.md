@@ -1,52 +1,54 @@
 # fy_lyrics
-lyrics scraper for foobar2000 using JScript Panel. í‘¸ë°” ì‚¬ìš©ìžë¡œì„œ, ì–¼ë§ˆ ì „ ì•Œì†¡ ê°€ì‚¬ ê°€ì ¸ì˜¤ëŠ” ê²Œ ë§‰ížŒ ì´í›„ë¡œ í•œêµ­ ê°€ì‚¬ ê°€ì ¸ì˜¤ëŠ” ê²Œ ì–´ë ¤ì›Œì ¸ì„œ ë§Œë“¤ì—ˆìŒ.
+lyrics scraper for foobar2000 using JScript Panel. Çª¹Ù »ç¿ëÀÚ·Î¼­, ¾ó¸¶ Àü ¾Ë¼Û °¡»ç °¡Á®¿À´Â °Ô ¸·Èù ÀÌÈÄ·Î ÇÑ±¹ °¡»ç °¡Á®¿À´Â °Ô ¾î·Á¿öÁ®¼­ ¸¸µé¾úÀ½.
 
-## ê²½ê³ !
-ì•„ì§ ë„ˆë¬´ë‚˜ ì´ˆê¸° ë²„ì „... ì§€ì†ì ìœ¼ë¡œ ê°œë°œ ì¤‘.
+## °æ°í!
+¾ÆÁ÷ ³Ê¹«³ª ÃÊ±â ¹öÀü... Áö¼ÓÀûÀ¸·Î °³¹ß Áß.
 
-## ê¸°ëŠ¥
-1. í‘¸ë°”ì˜ [JScript Panel](https://marc2k3.github.io/foo_jscript_panel.html)ì„ ì´ìš©í•´ ìžë°”ìŠ¤í¬ë¦½íŠ¸ë¥¼ ì‹¤í–‰í•˜ì—¬ 
-2. êµ­ë‚´ì™¸ ì£¼ìš” ì‚¬ì´íŠ¸ì—ì„œ ê°€ì‚¬ë¥¼ ê²€ìƒ‰í•˜ê³  
-3. ê²€ìƒ‰ ê²°ê³¼ ì²« ë²ˆì§¸ íŽ˜ì´ì§€ì—ì„œ ê°€ì‚¬ë¥¼ ìŠ¤í¬ë ˆì´í•‘í•´ì„œ 
-4. ì§€ì •í•œ í´ë”ì— `txt`ë¡œ ì €ìž¥í•œë‹¤.
-5. ê°€ì‚¬ë¥¼ ì €ìž¥í•˜ëŠ” ê²Œ ëì´ë¯€ë¡œ í‘¸ë°”ì˜ ì‚¬ì‹¤ìƒ í‘œì¤€ ê°€ì‚¬ í”ŒëŸ¬ê·¸ì¸ [Lyric Show 3](https://www.foobar2000.org/components/view/foo_uie_lyrics3)ì™€ í•¨ê»˜ ì‚¬ìš©í•˜ìž.
+## ±â´É
+1. Çª¹ÙÀÇ [JScript Panel](https://marc2k3.github.io/foo_jscript_panel.html)À» ÀÌ¿ëÇØ ÀÚ¹Ù½ºÅ©¸³Æ®¸¦ ½ÇÇàÇÏ¿© 
+2. ±¹³»¿Ü ÁÖ¿ä »çÀÌÆ®¿¡¼­ °¡»ç¸¦ °Ë»öÇÏ°í 
+3. °Ë»ö °á°ú Ã¹ ¹øÂ° ÆäÀÌÁö¿¡¼­ °¡»ç¸¦ ½ºÅ©·¹ÀÌÇÎÇØ¼­ 
+4. ÁöÁ¤ÇÑ Æú´õ¿¡ `txt`·Î ÀúÀåÇÑ´Ù.
+5. °¡»ç¸¦ ÀúÀåÇÏ´Â °Ô ³¡ÀÌ¹Ç·Î Çª¹ÙÀÇ »ç½Ç»ó Ç¥ÁØ °¡»ç ÇÃ·¯±×ÀÎ [Lyric Show 3](https://www.foobar2000.org/components/view/foo_uie_lyrics3)¿Í ÇÔ²² »ç¿ëÇÏÀÚ.
 
-## ì§€ì›í•˜ëŠ” ì‚¬ì´íŠ¸ ë° ë¶€ê°€ ì„¤ëª…
-`fy_settings.js` ì°¸ê³ .
-1. [Genius](https://genius.com)  //ê²€ìƒ‰ì´ ë§‰í˜€ ìžˆì–´ ì•„í‹°ìŠ¤íŠ¸ì™€ íƒ€ì´í‹€ë¡œ URLì„ ì¶”ì¸¡í•˜ë¯€ë¡œ ì™„ë²½í•˜ì§€ ì•Šë‹¤.
+## Áö¿øÇÏ´Â »çÀÌÆ® ¹× ºÎ°¡ ¼³¸í
+`fy_settings.js` Âü°í.
+1. [Genius](https://genius.com)  //°Ë»öÀÌ ¸·Çô ÀÖ¾î ¾ÆÆ¼½ºÆ®¿Í Å¸ÀÌÆ²·Î URLÀ» ÃßÃøÇÏ¹Ç·Î ¿Ïº®ÇÏÁö ¾Ê´Ù.
 2. [LyricWiki](https://lyrics.fandom.com)
 3. [AZlyrics](https://search.azlyrics.com)
 4. [Musixmatch](https://www.musixmatch.com)
 5. [LyricsMode](https://www.lyricsmode.com)
-6. ~~[SongMeanings](https://songmeanings.com)~~  //ì¢‹ì•„í•˜ëŠ” ì‚¬ì´íŠ¸ë¼ êµ¬í˜„ì€ í–ˆìœ¼ë‚˜ ì›Œë‚™ ì†ë„ê°€ ëŠë ¤ì„œ ë¹„í™œì„±í™”í•´ë‘ .
-7. [ì§€ë‹ˆ](https://www.genie.co.kr)
-8. [ë²…ìŠ¤](https://music.bugs.co.kr)  //ì™¸êµ­ ê³¡ì€ ê²€ìƒ‰ ê²°ê³¼ê°€ ë§¤ìš° í›„ì§€ê²Œ ë‚˜ì™€ì„œ ì œëŒ€ë¡œ ëª» ê°€ì ¸ì˜¤ëŠ” ì¼ì´ ë§Žë‹¤.
-9. ~~[ì§€ìŒì•„ì´](http://jieumai.com)~~  //ì˜¤ëž˜ëê³  'ê³„ì† ê²€ìƒ‰'ìœ¼ë¡œ ê²€ìƒ‰ ê²°ê³¼ë¥¼ ê³„ì† ì°¾ì•„ì•¼ í•˜ë¯€ë¡œ êµ¬í˜„í•˜ë ¤ë‹¤ ë§ì•˜ë‹¤.
+6. ~~[SongMeanings](https://songmeanings.com)~~  //ÁÁ¾ÆÇÏ´Â »çÀÌÆ®¶ó ±¸ÇöÀº ÇßÀ¸³ª ¿ö³« ¼Óµµ°¡ ´À·Á¼­ ºñÈ°¼ºÈ­ÇØµÒ.
+7. [Áö´Ï](https://www.genie.co.kr)
+8. [¹÷½º](https://music.bugs.co.kr)  //¿Ü±¹ °îÀº °Ë»ö °á°ú°¡ ¸Å¿ì ÈÄÁö°Ô ³ª¿Í¼­ Á¦´ë·Î ¸ø °¡Á®¿À´Â ÀÏÀÌ ¸¹´Ù.
+9. ~~[ÁöÀ½¾ÆÀÌ](http://jieumai.com)~~  //¿À·¡µÆ°í '°è¼Ó °Ë»ö'À¸·Î °Ë»ö °á°ú¸¦ °è¼Ó Ã£¾Æ¾ß ÇÏ¹Ç·Î ±¸ÇöÇÏ·Á´Ù ¸»¾Ò´Ù.
+10. [°¡»çÁý](https://gasazip.com)
 
-## ì„¤ì¹˜
-1. JScript Panelì´ ì—†ë‹¤ë©´ ë¨¼ì € ì„¤ì¹˜í•˜ê³ , íŒ¨ë„ì„ UIì— ì¶”ê°€í•œë‹¤.
-2. í‘¸ë°” í´ë”(`foobar2000`) ì•„ëž˜ JScript í´ë”(`user-components\foo_jscript_panel`)ì— ê°€ì„œ 
-3. `fy_lyrics` í´ë”ë¥¼ ë§Œë“¤ê³  ê±°ê¸°ì— ì´ê³³ì˜ `fy_lyrics.txt.js`, `fy_settings.js`, `lib\unorm.js` íŒŒì¼ì„ ë°›ì•„ì„œ ë‘”ë‹¤.
-4. JScript íŒ¨ë„ì„ ìš°í´ë¦­í•˜ê³  `Configure... > File > Import...` ì„ íƒ í›„ ì•žì˜ `fy_lyrics.txt.js` íŒŒì¼ì„ ì„ íƒí•˜ê³  `[OK]` ë²„íŠ¼ì„ ëˆ„ë¥¸ë‹¤.
-5. ë…¸ëž˜ë¥¼ ìƒˆë¡œ ìž¬ìƒí•˜ë©´ ìž‘ë™ ì‹œìž‘.
+## ¼³Ä¡
+1. JScript PanelÀÌ ¾ø´Ù¸é ¸ÕÀú ¼³Ä¡ÇÏ°í, ÆÐ³ÎÀ» UI¿¡ Ãß°¡ÇÑ´Ù.
+2. Çª¹Ù Æú´õ(`foobar2000`) ¾Æ·¡ JScript Æú´õ(`user-components\foo_jscript_panel`)¿¡ °¡¼­ 
+3. `fy_lyrics` Æú´õ¸¦ ¸¸µé°í °Å±â¿¡ ÀÌ°÷ÀÇ `fy_lyrics.txt.js`, `fy_settings.js`, `lib\unorm.js` ÆÄÀÏÀ» ¹Þ¾Æ¼­ µÐ´Ù.
+4. JScript ÆÐ³ÎÀ» ¿ìÅ¬¸¯ÇÏ°í `Configure... > File > Import...` ¼±ÅÃ ÈÄ ¾ÕÀÇ `fy_lyrics.txt.js` ÆÄÀÏÀ» ¼±ÅÃÇÏ°í `[OK]` ¹öÆ°À» ´©¸¥´Ù.
+5. ³ë·¡¸¦ »õ·Î Àç»ýÇÏ¸é ÀÛµ¿ ½ÃÀÛ.
 
-## `fy_settings.js` ì„¤ì •
-1. ì´ íŒŒì¼ì—ì„œ íŒŒì¼ ì €ìž¥ ìœ„ì¹˜ë¥¼ ì§€ì •í•´ì•¼ í•œë‹¤(í˜„ìž¬ ê¸°ë³¸ê°’ì€ `Z:\lyrics`).
-2. Lyric Show 3ì—ì„œ ê°€ì‚¬ë¥¼ ì €ìž¥í•˜ëŠ” í´ë”ì™€ ê°™ì€ í´ë”ë¥¼ ì“°ìž. ê·¸ëŸ¬ë ¤ê³  ë§Œë“¤ì—ˆë‹¤...
-3. ë¬¼ë¡  ì‚¬ì´íŠ¸ë¥¼ ì¶”ê°€í•  ìˆ˜ë„ ìžˆê³ , ì›ì¹˜ ì•ŠëŠ” ì‚¬ì´íŠ¸ëŠ” ì‚­ì œí•  ìˆ˜ë„ ìžˆë‹¤.
-4. ê° ì„¤ì • ë¬¸ì„œí™”ëŠ” ë‚˜ì¤‘ì—.
+## `fy_settings.js` ¼³Á¤
+1. ÀÌ ÆÄÀÏ¿¡¼­ ÆÄÀÏ ÀúÀå À§Ä¡¸¦ ÁöÁ¤ÇØ¾ß ÇÑ´Ù(ÇöÀç ±âº»°ªÀº `Z:\lyrics`).
+2. Lyric Show 3¿¡¼­ °¡»ç¸¦ ÀúÀåÇÏ´Â Æú´õ¿Í °°Àº Æú´õ¸¦ ¾²ÀÚ. ±×·¯·Á°í ¸¸µé¾ú´Ù...
+3. ¹°·Ð »çÀÌÆ®¸¦ Ãß°¡ÇÒ ¼öµµ ÀÖ°í, ¿øÄ¡ ¾Ê´Â »çÀÌÆ®´Â »èÁ¦ÇÒ ¼öµµ ÀÖ´Ù.
+4. °¢ ¼³Á¤ ¹®¼­È­´Â ³ªÁß¿¡.
 
-## ì„œë“œíŒŒí‹° ë¼ì´ì„ ìŠ¤
-ì§€ë‹ˆì–´ìŠ¤ URLì€ ê°€ë ¹ ì•…ìƒŒíŠ¸ë¥¼ ëª¨ë‘ ì œê±°í•˜ëŠ”ë°, ES6 ê¸°ëŠ¥ì„ ì“¸ ìˆ˜ê°€ ì—†ì–´ [unorm](https://github.com/walling/unorm) í´ë¦¬í•„ì„ ì¼ê³ , MITì™€ GPL ì´ì¤‘ ë¼ì´ì„ ìŠ¤ë‹¤.
+## ¼­µåÆÄÆ¼ ¶óÀÌ¼±½º
+Áö´Ï¾î½º URLÀº °¡·É ¾Ç»÷Æ®¸¦ ¸ðµÎ Á¦°ÅÇÏ´Âµ¥, ES6 ±â´ÉÀ» ¾µ ¼ö°¡ ¾ø¾î [unorm](https://github.com/walling/unorm) Æú¸®ÇÊÀ» ½è°í, MIT¿Í GPL ÀÌÁß ¶óÀÌ¼±½º´Ù.
 
-## ë²„ì „ ížˆìŠ¤í† ë¦¬
-- 0.1. 19-12-24 ì¼ë‹¨ ê³µê°œ
-- 0.2. 19-12-27 ê°œí–‰ë¬¸ìž ì‚¬ë¼ì§€ëŠ” ë¬¸ì œ í•´ê²° ë“±ë“±.
+## ¹öÀü È÷½ºÅä¸®
+- 0.1. 19-12-24 ÀÏ´Ü °ø°³
+- 0.2. 19-12-27 °³Çà¹®ÀÚ »ç¶óÁö´Â ¹®Á¦ ÇØ°á µîµî.
+- 0.3. 19-12-30 seperates settings, noUseIfHanguel setting added, some setting changed, Gasazip added, setting and code refactoring
 
 ## todo
-1. ~~ê°œí–‰ë¬¸ìž ì‚¬ë¼ì§€ëŠ” ë¬¸ì œ í•´ê²°. ê·¼ë° ì´ê±´ ì˜¤ëž˜ëœ js ì—”ì§„ì˜ ë¬¸ì œë¼ ì–´ì§¸ ë¶ˆê°€ëŠ¥í•  ë“¯.~~
-2. ì„¤ì • ë¬¸ì„œí™”
-3. ì§€ë‹ˆì–´ìŠ¤ API ì‚¬ìš©?
-4. ì§€ë‹ˆì–´ìŠ¤ì—ì„œ í•œêµ­ ê³¡ì„ ë” ìž˜ ì°¾ì„ ë°©ë²•?
-5. ì§€ë‹ˆì–´ìŠ¤ì—ì„œ í•œê¸€ ì™¸ ë¬¸ìž ì‚¬ìš©?
-6. ìžë™ ì—…ë°ì´íŠ¸. ì´ê±´ ê·¸ë¦¬ ì–´ë µì§€ ì•Šì„ ë“¯.
+1. ~~°³Çà¹®ÀÚ »ç¶óÁö´Â ¹®Á¦ ÇØ°á. ±Ùµ¥ ÀÌ°Ç ¿À·¡µÈ js ¿£ÁøÀÇ ¹®Á¦¶ó ¾îÂ° ºÒ°¡´ÉÇÒ µí.~~
+2. ¼³Á¤ ¹®¼­È­
+3. Áö´Ï¾î½º API »ç¿ë?
+4. Áö´Ï¾î½º¿¡¼­ ÇÑ±¹ °îÀ» ´õ Àß Ã£À» ¹æ¹ý?
+5. Áö´Ï¾î½º¿¡¼­ ÇÑ±Û ¿Ü ¹®ÀÚ »ç¿ë?
+6. ÀÚµ¿ ¾÷µ¥ÀÌÆ®. ÀÌ°Ç ±×¸® ¾î·ÆÁö ¾ÊÀ» µí.
