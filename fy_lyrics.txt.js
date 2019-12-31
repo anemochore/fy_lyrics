@@ -14,6 +14,7 @@
 //ver 0.1, 19-12-22, finished prototype
 //ver 0.2, 19-12-27, new-line issue fix
 //ver 0.3, 19-12-30, seperates settings, noUseIfHanguel setting added, some setting changed, Gasazip added, setting and code refactoring
+//ver 0.3.1, 19-12-30, small fixes, setting of LyricsMode fix
 
 
 //setting
@@ -49,19 +50,19 @@ _.mixin({
     }
 
     this.rbtn_up = function (x, y) {
-      panel.m.AppendMenuItem(_.isFolder(SAVE_FOLDER) ? MF_STRING : MF_GRAYED, 1, 'Open the save folder');
+      panel.m.AppendMenuItem(_.isFolder(SAVE_FOLDER) ? MF_STRING : MF_GRAYED, 1999, 'Open the save folder');
       panel.m.AppendMenuSeparator();
 
-      panel.m.AppendMenuItem(panel.metadb && this.content ? MF_STRING : MF_GRAYED, 9, 'Copy text to clipboard');
+      panel.m.AppendMenuItem(panel.metadb && this.content ? MF_STRING : MF_GRAYED, 9999, 'Copy text to clipboard');
       panel.m.AppendMenuSeparator();
     }
 
     this.rbtn_up_done = function (value) {
       switch(value) {
-        case 1:
+        case 1999:
           WshShell.Run('explorer "' + SAVE_FOLDER.replace(/\\\\/g, '\\') + '"');
           break;
-        case 9:
+        case 9999:
           _.setClipboardData(this.content);
           break;
       }
@@ -114,8 +115,6 @@ _.mixin({
       var t2 = t1.slice(0, idx2);
       var q1 = q.replace(':not('+t2+')', '');  //query without the params of :not()
       var q2 = q1 + t2;                        //query without :not()
-      console.log('q1 '+q1)
-      console.log('q2 '+q2)
       var data1 = Array.prototype.slice.call(div.querySelectorAll(q1));
       var data2 = Array.prototype.slice.call(div.querySelectorAll(q2));
       var data = [];

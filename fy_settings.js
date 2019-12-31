@@ -45,7 +45,7 @@ var SITES = [
   { name: 'LyricsMode', 
     protocolAndHost: 'https://www.lyricsmode.com', 
     pathnameAndSearch: '/search.php?search=', 
-    firstResultLinkElQuery: 'a.lm-link', 
+    firstResultLinkElQuery: 'a.lm-link--primary', 
     resultPageElQuery: 'div#lyrics_text', 
     resultRegExpAndStrPairToReplace: [/\nExplain Request \r\n×$/, ''], 
     noUseIfHanguel: true, 
