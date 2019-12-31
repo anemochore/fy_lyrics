@@ -13,8 +13,8 @@
 
 //ver 0.1, 19-12-22, finished prototype
 //ver 0.2, 19-12-27, new-line issue fix
-//ver 0.3, 19-12-30, seperates settings, noUseIfHanguel setting added, some setting changed, Gasazip added, setting and code refactoring
-//ver 0.3.1, 19-12-30, small fixes, setting of LyricsMode fix
+//ver 0.3, 19-12-30, seperates settings, noUseIfHangulInTitle setting added, some setting changed, Gasazip added, setting and code refactoring
+//ver 0.4, 19-12-31, setting and code refactoring
 
 
 //setting
@@ -81,6 +81,7 @@ _.mixin({
     this.isFetching = false;
     this.fetchingArtist = '';
     this.fetchingTitle = '';
+    this.fetchingArtistAndHangulArtist = [];
     this.init();
   },
 
@@ -90,7 +91,7 @@ _.mixin({
     return filename = SAVE_FOLDER + '\\' + artistAndTitle + ' [' + siteName + '].txt';
   },
 
-  contains_hangul: function(str) {
+  containsHangul: function(str) {
     //https://en.wikipedia.org/wiki/Hangul
     for(var i=0; i<str.length; i++) {
       c = str.charCodeAt(i);
@@ -103,7 +104,22 @@ _.mixin({
     return false;
   },
 
-  querySelectorAllOnString: function(value, q) {
+  getArtistAndHangulArtist: function(artist) {
+    if(!artist)
+      return [artist, null];
+
+    var hangulArtist = artist.match(/\(([ㄱ-ㅎ|ㅏ-ㅣ|가-힣| ]+)\)$/) || artist.match(/(^[ㄱ-ㅎ|ㅏ-ㅣ|가-힣| ]+)\(.+\)/);
+    if(hangulArtist) {
+      hangulArtist = hangulArtist[1];
+      artist = artist.replace(hangulArtist, '');
+      var possibleArtist = artist.match(/(.+)\(\)$/);
+      if(possibleArtist) artist = possibleArtist[1];
+      else artist = artist.match(/^\((.+)\)$/)[1];
+    }
+    return [artist, hangulArtist];
+  },
+
+  querySelectorAllOnStringReturningArray: function(value, q) {
     doc.open();
     var div = doc.createElement('div');
     div.innerHTML = value;
@@ -123,7 +139,7 @@ _.mixin({
           data.push(data1[i]);
     }
     else 
-      var data = div.querySelectorAll(q);
+      var data = Array.prototype.slice.call(div.querySelectorAll(q));
 
     doc.close();
     return data;
@@ -160,8 +176,8 @@ function on_mouse_rbtn_up(x, y) {
 function on_metadb_changed() {
   var that = text;
   if (panel.metadb) {
-    var temp_artist = panel.tf('%artist%');
-    var temp_title = panel.tf('%title%');
+    var temp_artist = panel.tf('%artist%').trim();
+    var temp_title = panel.tf('%title%').trim();
     if (that.artist == temp_artist && that.title == temp_title) 
       return;
 
@@ -190,6 +206,7 @@ function that_get(artist, title) {
   that.isFetching = true;
   that.fetchingArtist = artist;
   that.fetchingTitle = title;
+  that.fetchingArtistAndHangulArtist = _.getArtistAndHangulArtist(artist);
 
   var results = [];
   fetch(0);
@@ -206,19 +223,26 @@ function that_get(artist, title) {
       return;
     }
 
-    var containsHangul = _.contains_hangul(that.fetchingArtist + that.fetchingTitle);
-    if(containsHangul && currentSite.noUseIfHanguel) {
-      console.log("'noUseIfHanguel' of " + currentSite.name + ' triggered, so skip fetching.');
+    if(currentSite.noUseIfHangulInTitle && _.containsHangul(that.fetchingTitle)) {
+      console.log("'noUseIfHangulInTitle' of " + currentSite.name + ' triggered, so skip fetching.');
+      results[idx] = ERRORS['FETCHING_ABORTED'];
+      checkIfComplete(idx, that.fetchingArtist, that.fetchingTitle);
+      return;
+    }
+    else if(currentSite.noUseIfHangulInArtist && _.containsHangul(that.fetchingArtistAndHangulArtist[0])) {
+      console.log("'noUseIfHangulInArtist' of " + currentSite.name + ' triggered, so skip fetching.');
       results[idx] = ERRORS['FETCHING_ABORTED'];
       checkIfComplete(idx, that.fetchingArtist, that.fetchingTitle);
       return;
     }
 
-    var artistAndTitle = artist + ' ' + title;
-    if(currentSite.searchRegExpAndStrPairToReplace)
-      artistAndTitle = artistAndTitle.replace(currentSite.searchRegExpAndStrPairToReplace[0], currentSite.searchRegExpAndStrPairToReplace[1]);
-    var url = currentSite.protocolAndHost + currentSite.pathnameAndSearch + encodeURIComponent(artistAndTitle);
-    var pass = 1;
+    var query;
+    if(currentSite.noSearchNoHangulArtist || currentSite.searchNoHangulArtist)
+      query = that.fetchingArtistAndHangulArtist[0];
+    else 
+      query = that.fetchingArtist;
+
+    var url, pass;
     if(currentSite.noSearch) {
       String.prototype.replaceStrPairs_ = function(strPairs) {
         var result = this;
@@ -228,17 +252,14 @@ function that_get(artist, title) {
       }
 
       String.prototype.normalizeToNFD_ = function() {
-        //from https://stackoverflow.com/a/37511463/6153990
-        // and https://github.com/walling/unorm
-        if(_.contains_hangul(this)) return this;
+        if(_.containsHangul(this)) return this;
         else return this.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       }
 
-      var query = artist;
-      if(currentSite.noSearchSplitter)
-        query += currentSite.noSearchSplitter + title;
+      if(!currentSite.noSearchSplitter)
+        query += ' ' + that.fetchingTitle;  
       else 
-        query += ' ' + title;
+        query += currentSite.noSearchSplitter + that.fetchingTitle;
       if(currentSite.noSearchRegExpAndStrPairToReplace)
         query = query.replace(currentSite.noSearchRegExpAndStrPairToReplace[0], currentSite.noSearchRegExpAndStrPairToReplace[1]);
       if(currentSite.noSearchAdditionalStrPairsToReplace)
@@ -253,6 +274,17 @@ function that_get(artist, title) {
       url = currentSite.protocolAndHost + '/' + query;  //no encodeURIComponent
       pass = 2;
     }
+    else {
+      if(!currentSite.searchSplitter)
+        query += ' ' + that.fetchingTitle;
+      else 
+        query += currentSite.searchSplitter + that.fetchingTitle;
+      if(currentSite.searchRegExpAndStrPairToReplace)
+        query = query.replace(currentSite.searchRegExpAndStrPairToReplace[0], currentSite.searchRegExpAndStrPairToReplace[1]);
+
+      url = currentSite.protocolAndHost + currentSite.pathnameAndSearch + encodeURIComponent(query);
+      pass = 1;
+    }
 
     var wtf = new ActiveXObject('Microsoft.XMLHTTP');
     wtf.open('GET', url, true);
@@ -262,7 +294,7 @@ function that_get(artist, title) {
       if (wtf.readyState == 4) {
         if (wtf.status == 200) {
           if(that.fetchingArtist == artist && that.fetchingTitle == title) {
-            that_success(idx, currentSite, wtf.responseText, url, pass);  //responseXML is not supported...
+            that_success(idx, currentSite, wtf.responseText, url, pass, that.fetchingArtistAndHangulArtist[0], that.fetchingTitle);  //responseXML is not supported...
           }
           else {
             results[idx] = ERRORS['FETCHING_ABORTED'];
@@ -278,73 +310,142 @@ function that_get(artist, title) {
     };
   }
 
-  function that_success(idx, currentSite, txt, url, pass) {
+  function that_success(idx, currentSite, txt, url, pass, noHangulArtist, thisTitle) {
     if(pass == 1) {  //first pass
-      var parentElTxt = txt;
-      if(currentSite.firstResultLinkParentElQuery) {
-        var elsToKeep = 1;
-        if(currentSite.firstResultLinkParentElNumberToSkipIfMultiple) 
-          elsToKeep = currentSite.firstResultLinkParentElNumberToSkipIfMultiple + 1;
+      console.log('url:'+ url)
+      var newUrl;
 
-        parentElTxt = _.querySelectorAllOnString(txt, currentSite.firstResultLinkParentElQuery);//, currentSite.firstResultLinkParentElObj, elsToKeep);
-        if(parentElTxt.length > 1)
-          parentElTxt = parentElTxt[elsToKeep-1].innerHTML;
-        else 
-          parentElTxt = parentElTxt[0].innerHTML;
+      if(currentSite.searchResultArtistAndTitleElQuery) {
+        if(currentSite.searchResultLinkElQuery) {
+          console.log("'searchResultArtistAndTitleElQuery' and 'searchResultLinkElQuery' cannot be specified at the same time.");
+          result = ERRORS['SETTING_ERROR'];
+        }
+        else {
+          var artistToCheck = noHangulArtist.toLowerCase();  //use no hangul name only
+          var titleToCheck = thisTitle.toLowerCase();
+          var artistAndTitleEls = _.querySelectorAllOnStringReturningArray(txt, currentSite.searchResultArtistAndTitleElQuery);
+          var i, linkEl, titleEl, titleElTxt, artistEl, artistElTxt;
+          for(i=0; i<artistAndTitleEls.length; i++) {
+            if(currentSite.searchResultArtistAndTitleElLinkElQuery)
+              linkEl = artistAndTitleEls[i].querySelector(currentSite.searchResultArtistAndTitleElLinkElQuery);
+            else
+              linkEl = artistAndTitleEls[i];
+
+            if(currentSite.searchResultArtistAndTitleElTitleElQuery) {
+              titleEl = artistAndTitleEls[i].querySelector(currentSite.searchResultArtistAndTitleElTitleElQuery);
+              if(!titleEl) continue;
+              if(currentSite.searchResultArtistAndTitleElTitleElQueryNode)
+                titleElTxt = titleEl[currentSite.searchResultArtistAndTitleElTitleElQueryNode].nodeValue.trim();
+              else
+                titleElTxt = titleEl.innerText.trim();
+
+              var thisTitle = titleElTxt.toLowerCase();
+              if(currentSite.searchResultArtistAndTitleElTitleElTextRegExpMatch) {
+                thisTitle = titleElTxt.match(currentSite.searchResultArtistAndTitleElTitleElTextRegExpMatch);
+                if(thisTitle)
+                  thisTitle = thisTitle[1].toLowerCase();
+                else
+                  thisTitle = titleElTxt.toLowerCase();
+              }
+            }
+            else
+              titleElTxt = titleToCheck;
+
+            if(currentSite.searchResultArtistAndTitleElArtistElQuery) {
+              artistEl = artistAndTitleEls[i].querySelector(currentSite.searchResultArtistAndTitleElArtistElQuery);
+              if(!artistEl) continue;
+              artistElTxt = artistEl.innerText.trim();
+
+              var thisArtist = artistElTxt.toLowerCase();
+              if(currentSite.searchResultArtistAndTitleElArtistElTextRegExpMatch) {
+                thisArtist = artistElTxt.match(currentSite.searchResultArtistAndTitleElArtistElTextRegExpMatch);
+                if(thisArtist)
+                  thisArtist = thisArtist[1].toLowerCase();
+                else
+                  thisArtist = artistElTxt.toLowerCase();
+              }
+              artistElTxt = _.getArtistAndHangulArtist(thisArtist)[0];  //use no hangul name only
+            }
+            else
+              artistElTxt = artistToCheck;
+
+            if(artistToCheck == artistElTxt && titleToCheck == titleElTxt) break;
+          }
+          if(i < artistAndTitleEls.length)
+            newUrl = checkAndModifyHrefOnElAndUpdateResultToo_(linkEl);
+          else
+            results[idx] = ERRORS['NO_RESULTS'];
+        }
+      }
+      else if(currentSite.searchResultLinkElQuery) {
+        //take the first only... for now.
+        var searchResultLinkEl = _.querySelectorAllOnStringReturningArray(txt, currentSite.searchResultLinkElQuery)[0];
+        newUrl = checkAndModifyHrefOnElAndUpdateResultToo_(searchResultLinkEl);
+      }
+      else {
+        console.log("neither 'searchResultArtistAndTitleElQuery' nor 'searchResultLinkElQuery' are specified on the setting.");
+        results[idx] = ERRORS['SETTING_ERROR'];
       }
 
-      var firstResultLinkEl = _.querySelectorAllOnString(parentElTxt, currentSite.firstResultLinkElQuery)[0];
-      var newUrl;
-      if(firstResultLinkEl && firstResultLinkEl.href) {
-        //check if url is valid
-        newUrl = firstResultLinkEl.href;
-        if(currentSite.firstResultLinkElOnclickRegExpAndStrPairToReplace) {
-          var js = firstResultLinkEl.getAttribute('onclick');
+      function checkAndModifyHrefOnElAndUpdateResultToo_(el) {
+        if(!el || !el.href) {
+          results[idx] = ERRORS['NO_RESULTS'];
+          return null;
+        }
+
+        var newUrl = el.href;
+
+        if(currentSite.searchResultLinkElOnclickRegExpAndStrPairToReplace) {
+          var js = searchResultLinkEl.getAttribute('onclick');
           if(!js || !js.trim()) {
-            console.log("no 'onclick' property on firstResultLinkEl on " + currentSite.name);
+            console.log("no 'onclick' property on searchResultLinkEl on " + currentSite.name);
             results[idx] = ERRORS['SETTING_ERROR'];
+            return null;
           }
-          js = js.replace(currentSite.firstResultLinkElOnclickRegExpAndStrPairToReplace[0], currentSite.firstResultLinkElOnclickRegExpAndStrPairToReplace[1]).trim();
+          js = js.replace(currentSite.searchResultLinkElOnclickRegExpAndStrPairToReplace[0], currentSite.searchResultLinkElOnclickRegExpAndStrPairToReplace[1]).trim();
 
           newUrl = currentSite.resultPagePathnameAndSearch;
           if(!newUrl || !newUrl.trim()) {
             console.log("no 'resultPagePathnameAndSearch' in the setting on " + currentSite.name + ' setting!');
             results[idx] = ERRORS['SETTING_ERROR'];
+            return null;
           }
           newUrl = currentSite.protocolAndHost + newUrl + js;
+          return newUrl;
         }
+
+        //check if url is valid
+        var currentProtocol = currentSite.protocolAndHost.slice(0,5);
+        if(currentProtocol != 'https') currentProtocol = 'http';
+        //handling unusual(?) or relative address case...
+        if(newUrl.indexOf('http') != 0) {
+          if(newUrl.indexOf('about://') == 0)  //case of AZlyrics (no result)
+            newUrl = newUrl.replace('about://' , currentProtocol+'://');
+          else if(newUrl.indexOf('about:/') == 0)  //case of SongMeanings, etc.
+            newUrl = currentSite.protocolAndHost + newUrl.replace('about:/' , '/');
+        }
+        /*
         else {
-          var currentProtocol = currentSite.protocolAndHost.slice(0,5);
-          if(currentProtocol != 'https') currentProtocol = 'http';
-          //handling unusual(?) or relative address case...
-          if(newUrl.indexOf('http') != 0) {
-            if(newUrl.indexOf('about://') == 0)  //case of AZlyrics (no result)
-              newUrl = newUrl.replace('about://' , currentProtocol+'://');
-            else if(newUrl.indexOf('about:/') == 0)  //case of SongMeanings, etc.
-              newUrl = currentSite.protocolAndHost + newUrl.replace('about:/' , '/');
-          }
-          /*
-          else {
-            var pathname = firstResultLinkEl.pathname;
-            if(pathname.indexOf('/') != 0) pathname = '/' + pathname;  //wtf...
-            newUrl = currentSite.protocolAndHost + pathname;
-          }
-          */
-
-          //if the site's protocol and the result's protocol is different then... 
-          if(currentProtocol == 'https' && newUrl.slice(0,5) == 'http:')  //LyricWiki
-            newUrl = newUrl.replace('http', 'https');
-          else if(currentProtocol == 'http' && newUrl.slice(0,5) == 'https')  //???
-            newUrl = newUrl.replace('https', 'http');
-
-          if(newUrl == currentSite.failResultUrl) {
-            console.log("result page was 'failResultUrl'");
-            results[idx] = ERRORS['NO_RESULTS'];
-          }
+          var pathname = searchResultLinkEl.pathname;
+          if(pathname.indexOf('/') != 0) pathname = '/' + pathname;  //wtf...
+          newUrl = currentSite.protocolAndHost + pathname;
         }
+        */
+
+        //if the site's protocol and the result's protocol is different then... 
+        if(currentProtocol == 'https' && newUrl.slice(0,5) == 'http:')  //LyricWiki
+          newUrl = newUrl.replace('http', 'https');
+        else if(currentProtocol == 'http' && newUrl.slice(0,5) == 'https')  //???
+          newUrl = newUrl.replace('https', 'http');
+
+        if(newUrl == currentSite.failResultUrl) {
+          console.log("result page was 'failResultUrl'");
+          results[idx] = ERRORS['NO_RESULTS'];
+          return null;
+        }
+
+        return newUrl;
       }
-      else 
-        results[idx] = ERRORS['NO_RESULTS'];
 
       if(!results[idx] && newUrl) {
         var wtf = new ActiveXObject('Microsoft.XMLHTTP');
@@ -355,7 +456,7 @@ function that_get(artist, title) {
           if (wtf.readyState == 4) {
             if (wtf.status == 200) {
               if(that.fetchingArtist == that.artist && that.fetchingTitle == that.title) {
-                that_success(idx, currentSite, wtf.responseText, newUrl, 2);
+                that_success(idx, currentSite, wtf.responseText, newUrl, 2, noHangulArtist);
               }
               else {
                 results[idx] = ERRORS['FETCHING_ABORTED'];
@@ -379,19 +480,6 @@ function that_get(artist, title) {
       console.log('opening lyrics url: ' + url + ' (idx: '+(idx+1) + ' of ' + selectedSites.length + ') success');
       var result = ERRORS['NO_RESULTS'];
 
-      var parentElTxt = txt;
-      if(currentSite.resultPageParentElQuery) {
-        var elsToKeep = 1;
-        if(currentSite.resultPageParentElNumberToSkipIfMultiple)
-          elsToKeep = currentSite.resultPageParentElNumberToSkipIfMultiple + 1;
-
-        parentElTxt = _.querySelectorAllOnString(txt, currentSite.resultPageParentElQuery);
-        if(parentElTxt.length > 1)
-          parentElTxt = parentElTxt[elsToKeep-1].innerHTML;
-        else 
-          parentElTxt = parentElTxt[0].innerHTML;
-      }
-
       var tempResult = '';
       if(currentSite.resultPageElQuery) {
         if(currentSite.resultPageScriptStartsWith) {
@@ -399,7 +487,7 @@ function that_get(artist, title) {
           result = ERRORS['SETTING_ERROR'];
         }
         else {
-          var resultPageEls = _.querySelectorAllOnString(parentElTxt, currentSite.resultPageElQuery);
+          var resultPageEls = _.querySelectorAllOnStringReturningArray(txt, currentSite.resultPageElQuery);
           var elTxt = '';
           for(var i=0; i<resultPageEls.length; i++) {
             var resultPageEl = resultPageEls[i];
@@ -414,7 +502,7 @@ function that_get(artist, title) {
         }
       }
       else if(currentSite.resultPageScriptStartsWith) {
-        var els = _.getElementsByTagName(parentElTxt, 'script');
+        var els = _.getElementsByTagName(txt, 'script');
         var elTxt = '';
         for(var i=0; i<els.length; i++) {
           var elHTML = els[i].innerHTML;
@@ -451,7 +539,6 @@ function that_get(artist, title) {
         if(currentSite.resultRegExpAndStrPairToReplace)
           tempResult = tempResult.replace(currentSite.resultRegExpAndStrPairToReplace[0], currentSite.resultRegExpAndStrPairToReplace[1]);
       }
-      
       if(tempResult) result = tempResult;
 
       if(result == ERRORS['NO_RESULTS'])
