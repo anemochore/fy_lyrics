@@ -15,12 +15,12 @@ lyrics scraper for foobar2000 using JScript Panel. 푸바 사용자로서, 얼마 전 알송
 `fy_settings.js` 참고.
 1. [Genius](https://genius.com)  //검색이 막혀 있어 아티스트와 타이틀로 URL을 추측하므로 완벽하지 않다.
 2. [LyricWiki](https://lyrics.fandom.com)
-3. [AZlyrics](https://search.azlyrics.com)
+3. ~~[AZlyrics](https://search.azlyrics.com)~~  //구현은 했으나 품질이 별로라 비활성화
 4. [Musixmatch](https://www.musixmatch.com)
 5. [LyricsMode](https://www.lyricsmode.com)
-6. ~~[SongMeanings](https://songmeanings.com)~~  //좋아하는 사이트라 구현은 했으나 워낙 속도가 느려서 비활성화해둠.
+6. ~~[SongMeanings](https://songmeanings.com)~~  //좋아하는 사이트지만 워낙 속도가 느려서 비활성화해둠.
 7. [지니](https://www.genie.co.kr)
-8. [벅스](https://music.bugs.co.kr)  //외국 곡은 검색 결과가 매우 후지게 나와서 제대로 못 가져오는 일이 많다.
+8. [벅스](https://music.bugs.co.kr)  //외국 곡은 검색 결과가 매우 후지게 나옴...
 9. ~~[지음아이](http://jieumai.com)~~  //오래됐고 '계속 검색'으로 검색 결과를 계속 찾아야 하므로 구현하려다 말았다.
 10. [가사집](https://gasazip.com)
 
