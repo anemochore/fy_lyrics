@@ -200,7 +200,6 @@ function on_metadb_changed() {
 
     that.artist = temp_artist;
     that.title = temp_title;
-    //console.log('triggered: ' + that.artist + ' - ' + that.title);
     that_get(that.artist, that.title);
   } else {
     that.artist = '';
