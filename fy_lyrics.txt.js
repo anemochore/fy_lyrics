@@ -11,10 +11,12 @@
 
 // ==/PREPROCESSOR==
 
-//ver 0.1, 19-12-22, finished prototype
-//ver 0.2, 19-12-27, new-line issue fix
-//ver 0.3, 19-12-30, seperates settings, noUseIfHangulInTitle setting added, some setting changed, Gasazip added, setting and code refactoring
-//ver 0.4, 19-12-31, setting and code refactoring
+//ver 0.1. 19-12-22, finished prototype
+//ver 0.2. 19-12-27, new-line issue fix
+//ver 0.3. 19-12-30, seperates settings, noUse.ifHangulInTitle setting added, some setting changed, Gasazip added, setting and code refactoring
+//ver 0.4. 19-12-31, setting and code refactoring
+//ver 0.4.1. 19-12-31, setting and code refactoring
+//ver 0.4.2. 20-1-1, setting and code refactoring
 
 
 //setting
@@ -105,6 +107,10 @@ _.mixin({
   },
 
   getArtistAndHangulArtist: function(artist) {
+    //한글(영문) => [영문, 한글]
+    //영문(한글) => [영문, 한글]
+    //영문 => [영문, null]
+    //한글 => [null, 한글]
     if(!artist)
       return [artist, null];
 
@@ -116,7 +122,18 @@ _.mixin({
       if(possibleArtist) artist = possibleArtist[1];
       else artist = artist.match(/^\((.+)\)$/)[1];
     }
+    else if(artist.match(/^[ㄱ-ㅎ|ㅏ-ㅣ|가-힣| ]+$/)) {
+      hangulArtist = artist;
+      artist = null;
+    }
     return [artist, hangulArtist];
+  },
+  
+  replacePairs: function(str, regExpReplacePairs) {
+    var result = str;
+    for(var i=0; i<regExpReplacePairs.length; i++) 
+      result = result.replace(regExpReplacePairs[i][0], regExpReplacePairs[i][1]);
+    return result;
   },
 
   querySelectorAllOnStringReturningArray: function(value, q) {
@@ -175,7 +192,7 @@ function on_mouse_rbtn_up(x, y) {
 //modified js
 function on_metadb_changed() {
   var that = text;
-  if (panel.metadb) {
+  if(panel.metadb) {
     var temp_artist = panel.tf('%artist%').trim();
     var temp_title = panel.tf('%title%').trim();
     if (that.artist == temp_artist && that.title == temp_title) 
@@ -223,69 +240,66 @@ function that_get(artist, title) {
       return;
     }
 
-    if(currentSite.noUseIfHangulInTitle && _.containsHangul(that.fetchingTitle)) {
-      console.log("'noUseIfHangulInTitle' of " + currentSite.name + ' triggered, so skip fetching.');
-      results[idx] = ERRORS['FETCHING_ABORTED'];
-      checkIfComplete(idx, that.fetchingArtist, that.fetchingTitle);
-      return;
-    }
-    else if(currentSite.noUseIfHangulInArtist && _.containsHangul(that.fetchingArtistAndHangulArtist[0])) {
-      console.log("'noUseIfHangulInArtist' of " + currentSite.name + ' triggered, so skip fetching.');
+    var nu = currentSite.noUse, ns = currentSite.noSearch, s = currentSite.searchResult;
+    if( nu && nu.ifHangulInTitle && _.containsHangul(that.fetchingTitle) ||
+        nu && nu.ifHangulInArtist && !that.fetchingArtistAndHangulArtist[0] ||
+        !that.fetchingArtistAndHangulArtist[0] && (ns && ns.noUseHangulArtistIfPresent || s && s.noUseHangulArtistIfPresent)) {
+      console.log("'noUse.ifHangulInTitle' or 'noUse.ifHangulInArtist' or 'noUseHangulArtistIfPresent' triggered, so skip fetching.");
       results[idx] = ERRORS['FETCHING_ABORTED'];
       checkIfComplete(idx, that.fetchingArtist, that.fetchingTitle);
       return;
     }
 
     var query;
-    if(currentSite.noSearchNoHangulArtist || currentSite.searchNoHangulArtist)
-      query = that.fetchingArtistAndHangulArtist[0];
+    if((ns && ns.noUseHangulArtistIfPresent) || (s && s.noUseHangulArtistIfPresent))
+      query = that.fetchingArtistAndHangulArtist[0] || that.fetchingArtistAndHangulArtist[1];
     else 
       query = that.fetchingArtist;
 
     var url, pass;
     if(currentSite.noSearch) {
-      String.prototype.replaceStrPairs_ = function(strPairs) {
-        var result = this;
-        for(var i=0;i<strPairs.length;i++) 
-          result = result.replace(new RegExp(strPairs[i][0], 'g'), strPairs[i][1]);
-        return result;
-      }
-
       String.prototype.normalizeToNFD_ = function() {
         if(_.containsHangul(this)) return this;
         else return this.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       }
 
-      if(!currentSite.noSearchSplitter)
+      var ns = currentSite.noSearch;
+      if(!ns.splitter)
         query += ' ' + that.fetchingTitle;  
       else 
-        query += currentSite.noSearchSplitter + that.fetchingTitle;
-      if(currentSite.noSearchRegExpAndStrPairToReplace)
-        query = query.replace(currentSite.noSearchRegExpAndStrPairToReplace[0], currentSite.noSearchRegExpAndStrPairToReplace[1]);
-      if(currentSite.noSearchAdditionalStrPairsToReplace)
-        query = query.replaceStrPairs_(currentSite.noSearchAdditionalStrPairsToReplace);
-      if(currentSite.noSearchNormalizeToNFD)
+        query += ns.splitter + that.fetchingTitle;
+      if(ns.regExpReplacePairs)
+        query = _.replacePairs(query, ns.regExpReplacePairs);
+      if(ns.normalizeToNFD)
         query = query.normalizeToNFD_();
-      if(currentSite.noSearchCapitalize)
+      if(ns.capitalize)
         query = query[0].toUpperCase() + query.toLowerCase().slice(1, query.length);
-      if(currentSite.noSearchFinalSuffix)
-        query += currentSite.noSearchFinalSuffix;
+      if(ns.finalSuffix)
+        query += ns.finalSuffix;
 
-      url = currentSite.protocolAndHost + '/' + query;  //no encodeURIComponent
+      url = currentSite.protocolAndHost + currentSite.pathnameAndSearch + query;  //no encodeURIComponent
       pass = 2;
     }
-    else {
-      if(!currentSite.searchSplitter)
+    else if(currentSite.searchResult) {
+      var s = currentSite.searchResult;
+      if(!s.splitter)
         query += ' ' + that.fetchingTitle;
       else 
-        query += currentSite.searchSplitter + that.fetchingTitle;
-      if(currentSite.searchRegExpAndStrPairToReplace)
-        query = query.replace(currentSite.searchRegExpAndStrPairToReplace[0], currentSite.searchRegExpAndStrPairToReplace[1]);
+        query += s.splitter + that.fetchingTitle;
+      if(s.regExpReplacePairs)
+        query = _.replacePairs(query, s.regExpReplacePairs);
 
       url = currentSite.protocolAndHost + currentSite.pathnameAndSearch + encodeURIComponent(query);
       pass = 1;
     }
+    else {
+      console.log("neither 'noSearch' nor 'searchResult' is specified on the setting.");
+      results[idx] = ERRORS['SETTING_ERROR'];
+      checkIfComplete(selectedSites.length, that.fetchingArtist, that.fetchingTitle);
+      return;
+    }
 
+    //console.log('dev: url: '+url);
     var wtf = new ActiveXObject('Microsoft.XMLHTTP');
     wtf.open('GET', url, true);
     wtf.setRequestHeader('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT');
@@ -294,7 +308,7 @@ function that_get(artist, title) {
       if (wtf.readyState == 4) {
         if (wtf.status == 200) {
           if(that.fetchingArtist == artist && that.fetchingTitle == title) {
-            that_success(idx, currentSite, wtf.responseText, url, pass, that.fetchingArtistAndHangulArtist[0], that.fetchingTitle);  //responseXML is not supported...
+            that_success(idx, currentSite, wtf.responseText, url, pass, that.fetchingArtistAndHangulArtist[0] || that.fetchingArtistAndHangulArtist[1], that.fetchingTitle);  //responseXML is not supported...
           }
           else {
             results[idx] = ERRORS['FETCHING_ABORTED'];
@@ -310,251 +324,244 @@ function that_get(artist, title) {
     };
   }
 
-  function that_success(idx, currentSite, txt, url, pass, noHangulArtist, thisTitle) {
-    if(pass == 1) {  //first pass
-      console.log('url:'+ url)
-      var newUrl;
+  function that_success(idx, currentSite, txt, url, pass, thisArtist, thisTitle) {
+    switch(pass) {
+      case 1:  //first pass
+        var newUrl;
 
-      if(currentSite.searchResultArtistAndTitleElQuery) {
-        if(currentSite.searchResultLinkElQuery) {
-          console.log("'searchResultArtistAndTitleElQuery' and 'searchResultLinkElQuery' cannot be specified at the same time.");
-          result = ERRORS['SETTING_ERROR'];
-        }
-        else {
-          var artistToCheck = noHangulArtist.toLowerCase();  //use no hangul name only
-          var titleToCheck = thisTitle.toLowerCase();
-          var artistAndTitleEls = _.querySelectorAllOnStringReturningArray(txt, currentSite.searchResultArtistAndTitleElQuery);
-          var i, linkEl, titleEl, titleElTxt, artistEl, artistElTxt;
-          for(i=0; i<artistAndTitleEls.length; i++) {
-            if(currentSite.searchResultArtistAndTitleElLinkElQuery)
-              linkEl = artistAndTitleEls[i].querySelector(currentSite.searchResultArtistAndTitleElLinkElQuery);
-            else
-              linkEl = artistAndTitleEls[i];
-
-            if(currentSite.searchResultArtistAndTitleElTitleElQuery) {
-              titleEl = artistAndTitleEls[i].querySelector(currentSite.searchResultArtistAndTitleElTitleElQuery);
-              if(!titleEl) continue;
-              if(currentSite.searchResultArtistAndTitleElTitleElQueryNode)
-                titleElTxt = titleEl[currentSite.searchResultArtistAndTitleElTitleElQueryNode].nodeValue.trim();
+        var s = currentSite.searchResult;
+        switch(s.type) {
+          case('list'):
+            var artistToCheck = thisArtist.toLowerCase();
+            var titleToCheck = thisTitle.toLowerCase();
+            var listEls = _.querySelectorAllOnStringReturningArray(txt, s.query);
+            var i, linkEl, titleEl, artistEl;
+            var titleElTxt = titleToCheck, artistElTxt = artistToCheck;
+            for(i=0; i<listEls.length; i++) {
+              if(s.linkQuery)
+                linkEl = listEls[i].querySelector(s.linkQuery);
               else
-                titleElTxt = titleEl.innerText.trim();
+                linkEl = listEls[i];
 
-              var thisTitle = titleElTxt.toLowerCase();
-              if(currentSite.searchResultArtistAndTitleElTitleElTextRegExpMatch) {
-                thisTitle = titleElTxt.match(currentSite.searchResultArtistAndTitleElTitleElTextRegExpMatch);
-                if(thisTitle)
-                  thisTitle = thisTitle[1].toLowerCase();
+              if(s.titleQuery) {
+                titleEl = listEls[i].querySelector(s.titleQuery);
+                if(!titleEl) continue;
+                if(s.titleQueryNode)
+                  titleElTxt = titleEl[s.titleQueryNode].nodeValue.trim().toLowerCase();
                 else
-                  thisTitle = titleElTxt.toLowerCase();
+                  titleElTxt = titleEl.innerText.trim().toLowerCase();
+
+                if(s.titleTextRegExpMatch) {
+                  var tempTitle = titleElTxt.match(s.titleTextRegExpMatch);
+                  if(tempTitle) titleElTxt = tempTitle[1];
+                }
               }
-            }
-            else
-              titleElTxt = titleToCheck;
 
-            if(currentSite.searchResultArtistAndTitleElArtistElQuery) {
-              artistEl = artistAndTitleEls[i].querySelector(currentSite.searchResultArtistAndTitleElArtistElQuery);
-              if(!artistEl) continue;
-              artistElTxt = artistEl.innerText.trim();
-
-              var thisArtist = artistElTxt.toLowerCase();
-              if(currentSite.searchResultArtistAndTitleElArtistElTextRegExpMatch) {
-                thisArtist = artistElTxt.match(currentSite.searchResultArtistAndTitleElArtistElTextRegExpMatch);
-                if(thisArtist)
-                  thisArtist = thisArtist[1].toLowerCase();
+              if(s.artistQuery) {
+                artistEl = listEls[i].querySelector(s.artistQuery);
+                if(!artistEl) continue;
+                if(s.artistQueryNode)
+                  artistElTxt = artistEl[s.artistQueryNode].nodeValue.trim().toLowerCase();
                 else
-                  thisArtist = artistElTxt.toLowerCase();
-              }
-              artistElTxt = _.getArtistAndHangulArtist(thisArtist)[0];  //use no hangul name only
-            }
-            else
-              artistElTxt = artistToCheck;
+                  artistElTxt = artistEl.innerText.trim().toLowerCase();
 
-            if(artistToCheck == artistElTxt && titleToCheck == titleElTxt) break;
-          }
-          if(i < artistAndTitleEls.length)
+                if(s.artistTextRegExpMatch) {
+                  var tempArtist = artistElTxt.match(s.artistTextRegExpMatch);
+                  if(tempArtist) artistElTxt = tempArtist[1];
+                }
+                var noHangulArtist = _.getArtistAndHangulArtist(artistElTxt);  //use no hangul name only
+                artistElTxt = noHangulArtist[0] || noHangulArtist[1];
+              }
+
+              if(artistToCheck == artistElTxt && titleToCheck == titleElTxt) break;
+            }
+            if(i < listEls.length)
+              newUrl = checkAndModifyHrefOnElAndUpdateResultToo_(linkEl);
+            else
+              results[idx] = ERRORS['NO_RESULTS'];
+            break;
+
+          case('first'):
+            var linkEl = _.querySelectorAllOnStringReturningArray(txt, s.query)[0];
             newUrl = checkAndModifyHrefOnElAndUpdateResultToo_(linkEl);
-          else
+            break;
+
+          default:
+            console.log("'searchResult.type' is not recognized on the setting.");
+            results[idx] = ERRORS['SETTING_ERROR'];
+        }
+
+        function checkAndModifyHrefOnElAndUpdateResultToo_(el) {
+          if(!el || !el.href) {
             results[idx] = ERRORS['NO_RESULTS'];
-        }
-      }
-      else if(currentSite.searchResultLinkElQuery) {
-        //take the first only... for now.
-        var searchResultLinkEl = _.querySelectorAllOnStringReturningArray(txt, currentSite.searchResultLinkElQuery)[0];
-        newUrl = checkAndModifyHrefOnElAndUpdateResultToo_(searchResultLinkEl);
-      }
-      else {
-        console.log("neither 'searchResultArtistAndTitleElQuery' nor 'searchResultLinkElQuery' are specified on the setting.");
-        results[idx] = ERRORS['SETTING_ERROR'];
-      }
-
-      function checkAndModifyHrefOnElAndUpdateResultToo_(el) {
-        if(!el || !el.href) {
-          results[idx] = ERRORS['NO_RESULTS'];
-          return null;
-        }
-
-        var newUrl = el.href;
-
-        if(currentSite.searchResultLinkElOnclickRegExpAndStrPairToReplace) {
-          var js = searchResultLinkEl.getAttribute('onclick');
-          if(!js || !js.trim()) {
-            console.log("no 'onclick' property on searchResultLinkEl on " + currentSite.name);
-            results[idx] = ERRORS['SETTING_ERROR'];
             return null;
           }
-          js = js.replace(currentSite.searchResultLinkElOnclickRegExpAndStrPairToReplace[0], currentSite.searchResultLinkElOnclickRegExpAndStrPairToReplace[1]).trim();
 
-          newUrl = currentSite.resultPagePathnameAndSearch;
-          if(!newUrl || !newUrl.trim()) {
-            console.log("no 'resultPagePathnameAndSearch' in the setting on " + currentSite.name + ' setting!');
-            results[idx] = ERRORS['SETTING_ERROR'];
-            return null;
-          }
-          newUrl = currentSite.protocolAndHost + newUrl + js;
-          return newUrl;
-        }
-
-        //check if url is valid
-        var currentProtocol = currentSite.protocolAndHost.slice(0,5);
-        if(currentProtocol != 'https') currentProtocol = 'http';
-        //handling unusual(?) or relative address case...
-        if(newUrl.indexOf('http') != 0) {
-          if(newUrl.indexOf('about://') == 0)  //case of AZlyrics (no result)
-            newUrl = newUrl.replace('about://' , currentProtocol+'://');
-          else if(newUrl.indexOf('about:/') == 0)  //case of SongMeanings, etc.
-            newUrl = currentSite.protocolAndHost + newUrl.replace('about:/' , '/');
-        }
-        /*
-        else {
-          var pathname = searchResultLinkEl.pathname;
-          if(pathname.indexOf('/') != 0) pathname = '/' + pathname;  //wtf...
-          newUrl = currentSite.protocolAndHost + pathname;
-        }
-        */
-
-        //if the site's protocol and the result's protocol is different then... 
-        if(currentProtocol == 'https' && newUrl.slice(0,5) == 'http:')  //LyricWiki
-          newUrl = newUrl.replace('http', 'https');
-        else if(currentProtocol == 'http' && newUrl.slice(0,5) == 'https')  //???
-          newUrl = newUrl.replace('https', 'http');
-
-        if(newUrl == currentSite.failResultUrl) {
-          console.log("result page was 'failResultUrl'");
-          results[idx] = ERRORS['NO_RESULTS'];
-          return null;
-        }
-
-        return newUrl;
-      }
-
-      if(!results[idx] && newUrl) {
-        var wtf = new ActiveXObject('Microsoft.XMLHTTP');
-        wtf.open('GET', newUrl, true);
-        wtf.setRequestHeader('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT');
-        wtf.send();
-        wtf.onreadystatechange = function () {
-          if (wtf.readyState == 4) {
-            if (wtf.status == 200) {
-              if(that.fetchingArtist == that.artist && that.fetchingTitle == that.title) {
-                that_success(idx, currentSite, wtf.responseText, newUrl, 2, noHangulArtist);
-              }
-              else {
-                results[idx] = ERRORS['FETCHING_ABORTED'];
-                console.log('fetching aborted.');
-                checkIfComplete(selectedSites.length, that.fetchingArtist, that.fetchingTitle, "aborted");
-              }
-            } else {
-              console.log('opening ' + newUrl + ' (idx: ' + (idx+1) + ' of ' + selectedSites.length + ') failed!');
-              results[idx] = ERRORS['CANNOT_ACCESS'];
-              checkIfComplete(idx, that.fetchingArtist, that.fetchingTitle);
+          var testUrl;
+          var s = currentSite.searchResult;
+          if(s.onclickPathnameAndSearch) {
+            var onclickJs = el.getAttribute('onclick');
+            if(!onclickJs || !onclickJs.trim()) {
+              console.log("no 'onclick' property on the element!");
+              results[idx] = ERRORS['SETTING_ERROR'];
+              return null;
             }
-          }
-        };
-      }
-      else {
-        console.log('no search results on ' + currentSite.name);
-        checkIfComplete(idx, that.fetchingArtist, that.fetchingTitle);
-      }
-    }
-    else if(pass == 2) {  //second pass
-      console.log('opening lyrics url: ' + url + ' (idx: '+(idx+1) + ' of ' + selectedSites.length + ') success');
-      var result = ERRORS['NO_RESULTS'];
+            if(s.onclickParamRegExpReplacePairs)
+              onclickJs = _.replacePairs(onclickJs.trim(), s.onclickParamRegExpReplacePairs);
 
-      var tempResult = '';
-      if(currentSite.resultPageElQuery) {
-        if(currentSite.resultPageScriptStartsWith) {
-          console.log("'resultPageElQuery' and 'resultPageScriptStartsWith' cannot be specified at the same time.");
+            testUrl = currentSite.protocolAndHost + s.onclickPathnameAndSearch + onclickJs;
+            return testUrl;
+          }
+
+          //continues check when no onclick case
+          testUrl = el.href;
+          var currentProtocol = currentSite.protocolAndHost.slice(0,5);
+          if(currentProtocol != 'https') currentProtocol = 'http';
+          //handling unusual(?) or relative address case...
+          if(testUrl.indexOf('http') != 0) {
+            if(testUrl.indexOf('about://') == 0)  //case of AZlyrics (no result)
+              testUrl = testUrl.replace('about://' , currentProtocol+'://');
+            else if(testUrl.indexOf('about:/') == 0)  //case of SongMeanings, etc.
+              testUrl = currentSite.protocolAndHost + testUrl.replace('about:/' , '/');
+          }
+          /*
+          else {
+            var pathname = searchResultLinkEl.pathname;
+            if(pathname.indexOf('/') != 0) pathname = '/' + pathname;  //wtf...
+            testUrl = currentSite.protocolAndHost + pathname;
+          }
+          */
+
+          //if the site's protocol and the result's protocol is different then... 
+          if(currentProtocol == 'https' && testUrl.slice(0,5) == 'http:')  //LyricWiki
+            testUrl = testUrl.replace('http', 'https');
+          else if(currentProtocol == 'http' && testUrl.slice(0,5) == 'https')  //???
+            testUrl = testUrl.replace('https', 'http');
+
+          if(testUrl == s.failResultUrl) {
+            console.log("The result page was 'failResultUrl', so skipped.");
+            results[idx] = ERRORS['NO_RESULTS'];
+            return null;
+          }
+
+          return testUrl;
+        }
+
+        if(!results[idx] && newUrl) {
+          var wtf = new ActiveXObject('Microsoft.XMLHTTP');
+          wtf.open('GET', newUrl, true);
+          wtf.setRequestHeader('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT');
+          wtf.send();
+          wtf.onreadystatechange = function () {
+            if (wtf.readyState == 4) {
+              if (wtf.status == 200) {
+                if(that.fetchingArtist == that.artist && that.fetchingTitle == that.title) {
+                  that_success(idx, currentSite, wtf.responseText, newUrl, 2);
+                }
+                else {
+                  results[idx] = ERRORS['FETCHING_ABORTED'];
+                  console.log('fetching aborted.');
+                  checkIfComplete(selectedSites.length, that.fetchingArtist, that.fetchingTitle, "aborted");
+                }
+              } else {
+                console.log('opening ' + newUrl + ' (idx: ' + (idx+1) + ' of ' + selectedSites.length + ') failed!');
+                results[idx] = ERRORS['CANNOT_ACCESS'];
+                checkIfComplete(idx, that.fetchingArtist, that.fetchingTitle);
+              }
+            }
+          };
+        }
+        else {
+          console.log('no search results on ' + currentSite.name);
+          checkIfComplete(idx, that.fetchingArtist, that.fetchingTitle);
+        }
+        break;
+
+      case 2:  //second pass
+        console.log('opening lyrics url: ' + url + ' (idx: '+(idx+1) + ' of ' + selectedSites.length + ') success');
+        var result = ERRORS['NO_RESULTS'], tempResult = '';
+
+        var rp = currentSite.resultPage;
+        if(!rp) {
+          console.log("no 'resultPage' setting!");
           result = ERRORS['SETTING_ERROR'];
         }
         else {
-          var resultPageEls = _.querySelectorAllOnStringReturningArray(txt, currentSite.resultPageElQuery);
-          var elTxt = '';
-          for(var i=0; i<resultPageEls.length; i++) {
-            var resultPageEl = resultPageEls[i];
-            if(resultPageEl && resultPageEl.innerText) {
-              elTxt = resultPageEl.innerText.trim();
-              if(currentSite.useTextContent && resultPageEl.textContent)
-                elTxt = resultPageEl.textContent.trim();
-            }
-            if(elTxt) tempResult += elTxt;
-            if(!currentSite.resultPageTakeAllEl) break;  //run only once if resultPageTakeAllEl is false.
-          }
-        }
-      }
-      else if(currentSite.resultPageScriptStartsWith) {
-        var els = _.getElementsByTagName(txt, 'script');
-        var elTxt = '';
-        for(var i=0; i<els.length; i++) {
-          var elHTML = els[i].innerHTML;
-          var idx1 = elHTML.indexOf(currentSite.resultPageScriptFirstStrToFind);
-          if(idx1 > -1) {
-            var idx2 = elHTML.slice(idx1).indexOf(currentSite.resultPageScriptEndStrToFind);
-            if(idx2 > -1) {
-              elTxt = elHTML.slice(idx1).slice(currentSite.resultPageScriptFirstStrToFind.length, idx2);
+          switch(rp.type) {
+            case 'query':
+              var resultPageEls = _.querySelectorAllOnStringReturningArray(txt, rp.query);
+              var elTxt = '';
+              for(var i=0; i<resultPageEls.length; i++) {
+                if(!rp.useTextContent)
+                  elTxt = resultPageEls[i].innerText.trim();
+                else 
+                  elTxt = resultPageEls[i].textContent.trim();
+                if(elTxt) tempResult += elTxt;
+                if(!rp.aggregateAll) break;  //run only once if resultPage.aggregateAll is false.
+              }
               break;
+
+            case 'script_parsing':
+              var els = _.getElementsByTagName(txt, 'script');
+              var elTxt = '';
+              for(var i=0; i<els.length; i++) {
+                var elHTML = els[i].innerHTML;
+                var idx1 = elHTML.indexOf(rp.scriptFirstStrToFind);
+                if(idx1 > -1) {
+                  var idx2 = elHTML.slice(idx1).indexOf(rp.scriptEndStrToFind);
+                  if(idx2 > -1) {
+                    elTxt = elHTML.slice(idx1).slice(rp.scriptFirstStrToFind.length, idx2);
+                    break;
+                  }
+                }
+              }
+              if(elTxt) tempResult = elTxt;
+              break;
+
+            default:
+              console.log("'resultPage.type' is not recognized on the setting.");
+              result = ERRORS['SETTING_ERROR'];
+          }
+
+          if(rp.regExpReplacePairs)
+              tempResult = _.replacePairs(tempResult, rp.regExpReplacePairs);
+
+          if(tempResult) {
+            var er = currentSite.excludeResults;
+            if(er && er.include) {
+              var i;
+              for(i=0; i<er.include.length; i++)
+                if(tempResult.indexOf(er.include[i]) > -1) break;
+              
+              if(i<er.include.length) {
+                console.log("found lyrics includes 'excludeResultsInclude' text.");
+                tempResult = '';
+              }
+            }
+            else if(er && er.match) {
+              if(er.match.indexOf(tempResult) > -1) {
+                console.log("found lyrics matches 'excludeResultsMatch'.");
+                tempResult = '';
+              }
             }
           }
-        }
-        if(elTxt) tempResult = elTxt.replace(/\\n/g, '\n');
-      }
+          if(tempResult) result = tempResult;
 
-      if(tempResult) {
-        if(currentSite.excludeResultsInclude) {
-          var i;
-          for(i=0; i<currentSite.excludeResultsInclude.length; i++)
-            if(tempResult.indexOf(currentSite.excludeResultsInclude[i]) > -1) break;
-          
-          if(i<currentSite.excludeResultsInclude.length) {
-            console.log("found lyrics was included in 'excludeResultsInclude'");
-            tempResult = '';
+          if(result == ERRORS['NO_RESULTS'])
+            console.log('lyrics not found on ' + currentSite.name);
+          else if(result == ERRORS['SETTING_ERROR'])
+            console.log('please check the setting of ' + currentSite.name);
+          else {
+            console.log('lyrics found on ' + currentSite.name);
+            if(txt.toLowerCase().indexOf(title.replace(/[\[\('!\.\/\?].*|feat.*/, '').toLowerCase().trim()) == -1)
+              console.log('...with warning: possible wrong lyrics (no matching title text on the page)');
           }
+
+          results[idx] = result;
+          checkIfComplete(idx, that.fetchingArtist, that.fetchingTitle);
         }
-        else if(currentSite.excludeResultsMatch) {
-          if(currentSite.excludeResultsMatch && currentSite.excludeResultsMatch.indexOf(tempResult) > -1) {
-            console.log("found lyrics was included in 'excludeResultsMatch'");
-            tempResult = '';
-          }
-        }
-
-        if(currentSite.resultRegExpAndStrPairToReplace)
-          tempResult = tempResult.replace(currentSite.resultRegExpAndStrPairToReplace[0], currentSite.resultRegExpAndStrPairToReplace[1]);
-      }
-      if(tempResult) result = tempResult;
-
-      if(result == ERRORS['NO_RESULTS'])
-        console.log('lyrics not found on ' + currentSite.name);
-      else if(result == ERRORS['SETTING_ERROR'])
-        console.log('please check the setting of ' + currentSite.name);
-      else {
-        console.log('lyrics found on ' + currentSite.name);
-        if(txt.toLowerCase().indexOf(title.replace(/[\[\('!\.\/\?].*|feat.*/, '').toLowerCase().trim()) == -1)
-          console.log('...with warning: possible wrong lyrics (no matching title text on the page)');
-      }
-
-      results[idx] = result;
-      checkIfComplete(idx, that.fetchingArtist, that.fetchingTitle);
+        break;
     }
-
   }
 
   function checkIfComplete(idx, fetchingArtist, fetchingTitle, isAborted) {
