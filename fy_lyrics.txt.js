@@ -17,6 +17,7 @@
 //ver 0.4. 19-12-31, setting and code refactoring
 //ver 0.4.1. 19-12-31, setting and code refactoring
 //ver 0.4.2. 20-1-1, setting and code refactoring
+//ver 0.4.3. 20-1-1, AZlyrics disabled, artist and title searching improved
 
 
 //setting
@@ -118,9 +119,9 @@ _.mixin({
     if(hangulArtist) {
       hangulArtist = hangulArtist[1];
       artist = artist.replace(hangulArtist, '');
-      var possibleArtist = artist.match(/(.+)\(\)$/);
-      if(possibleArtist) artist = possibleArtist[1];
-      else artist = artist.match(/^\((.+)\)$/)[1];
+      var possibleArtist = artist.match(/(.+)\(\)/);
+      if(possibleArtist) artist = possibleArtist[1].trim();
+      else artist = artist.match(/\((.+)\)/)[1];
     }
     else if(artist.match(/^[ㄱ-ㅎ|ㅏ-ㅣ|가-힣| ]+$/)) {
       hangulArtist = artist;
@@ -298,7 +299,6 @@ function that_get(artist, title) {
       return;
     }
 
-    //console.log('dev: url: '+url);
     var wtf = new ActiveXObject('Microsoft.XMLHTTP');
     wtf.open('GET', url, true);
     wtf.setRequestHeader('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT');
@@ -307,7 +307,7 @@ function that_get(artist, title) {
       if (wtf.readyState == 4) {
         if (wtf.status == 200) {
           if(that.fetchingArtist == artist && that.fetchingTitle == title) {
-            that_success(idx, currentSite, wtf.responseText, url, pass, that.fetchingArtistAndHangulArtist[0] || that.fetchingArtistAndHangulArtist[1], that.fetchingTitle);  //responseXML is not supported...
+            that_success(idx, currentSite, wtf.responseText, url, pass, that.fetchingArtistAndHangulArtist, that.fetchingTitle);  //responseXML is not supported...
           }
           else {
             results[idx] = ERRORS['FETCHING_ABORTED'];
@@ -323,7 +323,7 @@ function that_get(artist, title) {
     };
   }
 
-  function that_success(idx, currentSite, txt, url, pass, thisArtist, thisTitle) {
+  function that_success(idx, currentSite, txt, url, pass, thisArtistAndHangulArtist, thisTitle) {
     switch(pass) {
       case 1:  //first pass
         var newUrl;
@@ -331,11 +331,13 @@ function that_get(artist, title) {
         var s = currentSite.searchResult;
         switch(s.type) {
           case('list'):
-            var artistToCheck = thisArtist.toLowerCase();
+            var artistToCheck = thisArtistAndHangulArtist[0];
+            if(artistToCheck) artistToCheck = artistToCheck.toLowerCase();
+            var artistHangulToCheck = thisArtistAndHangulArtist[1];
             var titleToCheck = thisTitle.toLowerCase();
             var listEls = _.querySelectorAllOnStringReturningArray(txt, s.query);
             var i, linkEl, titleEl, artistEl;
-            var titleElTxt = titleToCheck, artistElTxt = artistToCheck;
+            var titleElTxt = titleToCheck, artistElTxt = artistToCheck, artistElTxtHan = artistHangulToCheck;
             for(i=0; i<listEls.length; i++) {
               if(s.linkQuery)
                 linkEl = listEls[i].querySelector(s.linkQuery);
@@ -368,11 +370,15 @@ function that_get(artist, title) {
                   var tempArtist = artistElTxt.match(s.artistTextRegExpMatch);
                   if(tempArtist) artistElTxt = tempArtist[1];
                 }
-                var noHangulArtist = _.getArtistAndHangulArtist(artistElTxt);  //use no hangul name only
-                artistElTxt = noHangulArtist[0] || noHangulArtist[1];
+                var tempArtistAndHangulArtist = _.getArtistAndHangulArtist(artistElTxt);
+                artistElTxt = tempArtistAndHangulArtist[0];
+                if(artistElTxt) artistElTxt = artistElTxt.toLowerCase();
+                artistElTxtHan = tempArtistAndHangulArtist[1];
               }
 
-              if(artistToCheck == artistElTxt && titleToCheck == titleElTxt) break;
+              if((((artistToCheck && artistElTxt) && (artistToCheck == artistElTxt)) || 
+                  ((artistHangulToCheck && artistElTxtHan) && (artistHangulToCheck == artistElTxtHan))) && 
+                  titleToCheck == titleElTxt) break;
             }
             if(i < listEls.length)
               newUrl = checkAndModifyHrefOnElAndUpdateResultToo_(linkEl);

@@ -44,6 +44,7 @@ var SITES = [
       ifHangulInTitle: true, 
     },
   },
+/*
   { name: 'AZlyrics', 
     protocolAndHost: 'https://search.azlyrics.com', 
     pathnameAndSearch: '/search.php?q=', 
@@ -64,6 +65,7 @@ var SITES = [
       ifHangulInTitle: true, 
     },
   },
+*/
   { name: 'Musixmatch', 
     protocolAndHost: 'https://www.musixmatch.com', 
     pathnameAndSearch: '/search/', 
@@ -127,8 +129,8 @@ var SITES = [
       type: 'list', 
       query: 'table.lyrics>tbody>tr[albumid]', 
       linkQuery: 'a.trackInfo', 
-      titleQuery: 'p.title', 
       artistQuery: 'p.artist', 
+      //titleQuery: 'p.title',  //검색 결과가 너무 안 좋음...
     },
     resultPage: {
       type: 'query', 
@@ -141,10 +143,10 @@ var SITES = [
     searchResult: {
       type: 'list', 
       query: 'a.list-group-item', 
+      artistQuery: 'code', 
       titleQuery: 'h4', 
       titleQueryNode: 'firstChild', 
       titleTextRegExpMatch: /^(.+)\n/, 
-      artistQuery: 'code', 
     },
     resultPage: {
       type: 'query', 
