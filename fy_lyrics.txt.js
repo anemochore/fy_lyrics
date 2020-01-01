@@ -230,7 +230,7 @@ function that_get(artist, title) {
 
   function fetch(idx) {
     var currentSite = selectedSites[idx];
-    console.log('____fetching idx: ' + (idx+1) + ' of ' + selectedSites.length);
+    console.log('____fetching ' + currentSite.name + ' (idx: ' + (idx+1) + ' of ' + selectedSites.length + ')____');
 
     var filename = _.getFilename(that.fetchingArtist, that.fetchingTitle, selectedSites[idx].name);
     if(_.isFile(filename)) {
@@ -241,9 +241,10 @@ function that_get(artist, title) {
     }
 
     var nu = currentSite.noUse, ns = currentSite.noSearch, s = currentSite.searchResult;
-    if( nu && nu.ifHangulInTitle && _.containsHangul(that.fetchingTitle) ||
-        nu && nu.ifHangulInArtist && !that.fetchingArtistAndHangulArtist[0] ||
-        !that.fetchingArtistAndHangulArtist[0] && (ns && ns.noUseHangulArtistIfPresent || s && s.noUseHangulArtistIfPresent)) {
+    if((nu && nu.ifHangulInTitle && _.containsHangul(that.fetchingTitle)) ||
+       (nu && nu.ifHangulInArtist && !that.fetchingArtistAndHangulArtist[0]) ||
+       (nu && nu.ifHangulInArtist && that.fetchingArtistAndHangulArtist[0] && _.containsHangul(that.fetchingArtist)) ||
+       (!that.fetchingArtistAndHangulArtist[0] && (ns && ns.noUseHangulArtistIfPresent || s && s.noUseHangulArtistIfPresent))) {
       console.log("'noUse.ifHangulInTitle' or 'noUse.ifHangulInArtist' or 'noUseHangulArtistIfPresent' triggered, so skip fetching.");
       results[idx] = ERRORS['FETCHING_ABORTED'];
       checkIfComplete(idx, that.fetchingArtist, that.fetchingTitle);
@@ -477,7 +478,7 @@ function that_get(artist, title) {
           };
         }
         else {
-          console.log('no search results on ' + currentSite.name);
+          console.log('no search results');
           checkIfComplete(idx, that.fetchingArtist, that.fetchingTitle);
         }
         break;
@@ -553,11 +554,11 @@ function that_get(artist, title) {
           if(tempResult) result = tempResult;
 
           if(result == ERRORS['NO_RESULTS'])
-            console.log('lyrics not found on ' + currentSite.name);
+            console.log('lyrics not found');
           else if(result == ERRORS['SETTING_ERROR'])
             console.log('please check the setting of ' + currentSite.name);
           else {
-            console.log('lyrics found on ' + currentSite.name);
+            console.log('lyrics found');
             if(txt.toLowerCase().indexOf(title.replace(/[\[\('!\.\/\?].*|feat.*/, '').toLowerCase().trim()) == -1)
               console.log('...with warning: possible wrong lyrics (no matching title text on the page)');
           }
