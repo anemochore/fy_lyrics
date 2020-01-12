@@ -3,3 +3,6 @@
 var USER_SITES = [
 
 ];
+
+//if you want to disable default sites, do it like this here.
+//SITES = [];
