@@ -540,13 +540,13 @@ function that_get(artist, title) {
                 if(tempResult.indexOf(er.include[i]) > -1) break;
               
               if(i<er.include.length) {
-                console.log("found lyrics includes 'excludeResultsInclude' text.");
+                console.log("found lyrics includes 'excludeResults' text.");
                 tempResult = '';
               }
             }
             else if(er && er.match) {
               if(er.match.indexOf(tempResult) > -1) {
-                console.log("found lyrics matches 'excludeResultsMatch'.");
+                console.log("found lyrics matches 'excludeResults'.");
                 tempResult = '';
               }
             }

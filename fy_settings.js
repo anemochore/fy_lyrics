@@ -19,6 +19,9 @@ var SITES = [
       type: 'query', 
       query: 'div.lyrics', 
     },
+	excludeResults: {
+      match: ['[Instrumental]'], 
+    },
     noUse: {
       ifHangulInArtist: true, 
       ifHangulInTitle: true, 
@@ -38,6 +41,9 @@ var SITES = [
     resultPage: {
       type: 'query', 
       query: 'div.lyricbox', 
+    },
+	excludeResults: {
+      match: ['Instrumental'], 
     },
     noUse: {
       ifHangulInArtist: true, 
