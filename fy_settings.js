@@ -168,6 +168,7 @@ var SITES = [
   //지음아이: 일한 독음 및 번역... '계속 검색'해야 하므로 패스.
   //flashlyrics: 'https://www.flashlyrics.com/lyrics'   //google search
   //jetlyrics: 'http://lyrics.jetmute.com/'  //romanized
-  //lyrics.co.kr: 'https://www.lyrics.co.kr/' //post method
+  //lyrics.co.kr:  //post method
+  //allklyrics.com:  //post method
 
 ];
