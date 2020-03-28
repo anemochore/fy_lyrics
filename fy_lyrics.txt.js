@@ -18,6 +18,7 @@
 //ver 0.4.1. 19-12-31, setting and code refactoring
 //ver 0.4.2. 20-1-1, setting and code refactoring
 //ver 0.4.3. 20-1-1, AZlyrics disabled, artist and title searching improved
+//ver 0.4.4. 20-3-28, mp3 v1 tag recognition bug fixed
 
 
 //setting
@@ -120,8 +121,13 @@ _.mixin({
       hangulArtist = hangulArtist[1];
       artist = artist.replace(hangulArtist, '');
       var possibleArtist = artist.match(/(.+)\(\)/);
+      console.log(artist);
       if(possibleArtist) artist = possibleArtist[1].trim();
-      else artist = artist.match(/\((.+)\)/)[1];
+      else {
+        var t = artist.match(/\((.+)\)/)
+        if(t)  //to prevent mp3 v1 tag bug (maybe)
+          artist = t[1];  
+      }
     }
     else if(artist.match(/^[ㄱ-ㅎ|ㅏ-ㅣ|가-힣| ]+$/)) {
       hangulArtist = artist;
