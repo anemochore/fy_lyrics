@@ -19,6 +19,7 @@
 //ver 0.4.2. 20-1-1, setting and code refactoring
 //ver 0.4.3. 20-1-1, AZlyrics disabled, artist and title searching improved
 //ver 0.4.4. 20-3-28, mp3 v1 tag recognition bug fixed
+//ver 0.4.5. 21-12-19, removed dev console.log
 
 
 //setting
@@ -121,7 +122,7 @@ _.mixin({
       hangulArtist = hangulArtist[1];
       artist = artist.replace(hangulArtist, '');
       var possibleArtist = artist.match(/(.+)\(\)/);
-      console.log(artist);
+      //console.log(artist);
       if(possibleArtist) artist = possibleArtist[1].trim();
       else {
         var t = artist.match(/\((.+)\)/)
