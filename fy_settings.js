@@ -27,6 +27,7 @@ var SITES = [
       ifHangulInTitle: true, 
     },
   },
+/*
   { name: 'LyricWiki', 
     protocolAndHost: 'https://lyrics.fandom.com', 
     pathnameAndSearch: '/wiki/Special:Search?query=', 
@@ -50,6 +51,7 @@ var SITES = [
       ifHangulInTitle: true, 
     },
   },
+*/
 /*
   { name: 'AZlyrics', 
     protocolAndHost: 'https://search.azlyrics.com', 
